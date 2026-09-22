@@ -1,0 +1,98 @@
+.login-main {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(20, 43, 74, .94), rgba(32, 65, 105, .82)),
+    url("https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=1800&q=85") center/cover;
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 96px);
+  padding: 70px 24px;
+}
+
+.login-card {
+  background: #fff;
+  border-top: 5px solid #f3c94f;
+  box-shadow: 0 25px 80px rgba(5, 22, 44, .28);
+  max-width: 470px;
+  padding: 44px;
+  width: 100%;
+}
+
+.login-logo {
+  border-radius: 50%;
+  display: block;
+  height: 58px;
+  margin-bottom: 30px;
+  object-fit: cover;
+  width: 58px;
+}
+
+.login-card h1 {
+  color: #142b4a;
+  font-size: clamp(46px, 7vw, 70px);
+  margin-bottom: 18px;
+}
+
+.login-card h1 em {
+  color: #b08213;
+  font-family: var(--serif);
+  font-style: italic;
+}
+
+.login-card > p:not(.eyebrow) {
+  color: #64738a;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.login-card label {
+  color: #142b4a;
+  display: grid;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.login-card input {
+  background: #fff;
+  border: 1px solid #cfdae7;
+  color: #142b4a;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 0;
+  padding: 14px;
+  text-transform: none;
+  width: 100%;
+}
+
+.login-card input:focus {
+  border-color: #f3c94f;
+  box-shadow: 0 0 0 3px rgba(243, 201, 79, .2);
+  outline: none;
+}
+
+.login-card button {
+  border: 0;
+  cursor: pointer;
+  margin-top: 22px;
+  width: 100%;
+}
+
+.login-error {
+  color: #a33d3d;
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
+@media (max-width: 800px) {
+  .login-main {
+    min-height: calc(100vh - 86px);
+    padding: 35px 18px;
+  }
+
+  .login-card {
+    padding: 32px 26px;
+  }
+}
