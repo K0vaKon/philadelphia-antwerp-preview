@@ -122,6 +122,46 @@ const leadersPageList = document.querySelector("#leaders-page-list");
 const adminLeadersList = document.querySelector("#admin-leaders-list");
 const leaderForm = document.querySelector("#leader-form");
 const leaderStorageKey = "philadelphia-leaders";
+const exportBackupButton = document.querySelector("#export-backup");
+const importBackupInput = document.querySelector("#import-backup");
+const backupMessage = document.querySelector("#backup-message");
+const backupVersion = 1;
+const maxBackupSize = 15 * 1024 * 1024;
+
+const isSafeImage = (value) => typeof value === "string" && (value === "" || value.startsWith("data:image/") || /^https:\/\/[^\s]+$/i.test(value));
+const normalizeBackupItems = (items, type) => {
+  if (!Array.isArray(items) || items.length > 500) throw new Error(`Некорректные данные ${type}.`);
+  return items.map((item) => {
+    if (!item || typeof item !== "object" || typeof item.id !== "string" || typeof item.title !== "string") throw new Error(`Некорректная запись ${type}.`);
+    const normalized = { ...item };
+    ["id", "title", "tag", "description", "date", "time", "image"].forEach((key) => {
+      if (normalized[key] !== undefined && typeof normalized[key] !== "string") throw new Error(`Некорректное поле ${key}.`);
+      if (typeof normalized[key] === "string" && normalized[key].length > 1000000) throw new Error("Слишком большое текстовое поле.");
+    });
+    if (!isSafeImage(normalized.image || "")) throw new Error("Разрешены только изображения и безопасные HTTPS-ссылки.");
+    return normalized;
+  });
+};
+
+const createBackup = () => JSON.stringify({
+  format: "philadelphia-site-backup",
+  version: backupVersion,
+  exportedAt: new Date().toISOString(),
+  events: readEvents(),
+  leaders: readLeaders(),
+}, null, 2);
+
+const downloadBackup = (automatic = false) => {
+  const blob = new Blob([createBackup()], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `philadelphia-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  if (!automatic && backupMessage) backupMessage.textContent = "Резервная копия скачана.";
+};
+
 
 const readEvents = () => {
   try {
@@ -283,6 +323,39 @@ if (eventForm) {
     } else {
       saveEvent("");
     }
+  });
+}
+
+if (exportBackupButton) exportBackupButton.addEventListener("click", () => downloadBackup());
+
+if (importBackupInput) {
+  importBackupInput.addEventListener("change", () => {
+    const file = importBackupInput.files?.[0];
+    importBackupInput.value = "";
+    if (!file) return;
+    if (file.size > maxBackupSize) {
+      if (backupMessage) backupMessage.textContent = "Файл слишком большой. Максимальный размер — 15 МБ.";
+      return;
+    }
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      try {
+        const backup = JSON.parse(String(reader.result));
+        if (backup.format !== "philadelphia-site-backup" || backup.version !== backupVersion) throw new Error("Файл создан в несовместимом формате.");
+        const events = normalizeBackupItems(backup.events, "событий");
+        const leaders = normalizeBackupItems(backup.leaders, "лидеров");
+        if (!window.confirm(`Заменить текущие данные?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
+        downloadBackup(true);
+        localStorage.setItem(eventStorageKey, JSON.stringify(events));
+        localStorage.setItem(leaderStorageKey, JSON.stringify(leaders));
+        renderEvents();
+        renderLeaders();
+        if (backupMessage) backupMessage.textContent = "Данные успешно восстановлены.";
+      } catch (error) {
+        if (backupMessage) backupMessage.textContent = error instanceof Error ? error.message : "Не удалось импортировать файл.";
+      }
+    });
+    reader.readAsText(file);
   });
 }
 

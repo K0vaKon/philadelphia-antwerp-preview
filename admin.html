@@ -49,6 +49,17 @@
         </div>
         <div id="admin-leaders-list"></div>
       </section>
+      <section class="admin-backup admin-events">
+        <div class="section-top"><div><p class="eyebrow">Перенос и защита</p><h2>Резервная<br /><span>копия.</span></h2></div></div>
+        <div class="backup-card">
+          <p>Скачайте события, лидеров и фотографии одним файлом. Его можно сохранить и позже импортировать на сервер.</p>
+          <div class="backup-actions">
+            <button class="button button-dark" id="export-backup" type="button">Скачать резервную копию <span>↓</span></button>
+            <label class="backup-import-button">Восстановить из файла<input id="import-backup" type="file" accept="application/json,.json" /></label>
+          </div>
+          <p class="form-message" id="backup-message" role="status"></p>
+        </div>
+      </section>
     </main>
     <main class="login-main" id="login-screen">
       <section class="login-card">
