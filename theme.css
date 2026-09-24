@@ -612,3 +612,20 @@
   box-shadow: 0 12px 40px rgba(20, 43, 74, .05);
   padding: 0 24px;
 }
+
+/* Keep leader photos consistent at every screen size. */
+.leader-preview-photo,
+.leader-photo {
+  aspect-ratio: 4 / 5;
+  background-position: center 20%;
+  height: auto;
+  min-height: 0;
+}
+
+@media (max-width: 800px) {
+  .leader-preview-photo,
+  .leader-photo {
+    aspect-ratio: 4 / 5;
+    height: auto;
+  }
+}
