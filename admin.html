@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Админка событий — Филадельфия</title>
+    <title>Админка — Филадельфия</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
@@ -15,7 +15,7 @@
   </head>
   <body class="admin-page">
     <header class="site-header inner-header">
-      <a class="brand" href="index.html"><img class="brand-logo" src="https://opwekking.org/wp-content/uploads/2019/02/cropped-icon.png" alt="Логотип церкви Филадельфия" /><span><strong>Филадельфия</strong><small>администрирование событий</small></span></a>
+      <a class="brand" href="index.html"><img class="brand-logo" src="https://opwekking.org/wp-content/uploads/2019/02/cropped-icon.png" alt="Логотип церкви Филадельфия" /><span><strong>Филадельфия</strong><small>управление сайтом</small></span></a>
       <div class="admin-header-actions"><a class="text-link" href="index.html">На сайт <span>↗</span></a><button class="logout-button" id="logout-button" type="button">Выйти</button></div>
     </header>
     <main class="admin-main" id="admin-content">
@@ -34,6 +34,21 @@
       <aside class="admin-aside"><div class="aside-card"><span class="aside-icon">✦</span><h3>События<br /><em>живут здесь.</em></h3><p>Создавайте встречи, праздники и собрания — посетители сразу увидят их на главной странице.</p><div class="aside-line"></div><span class="aside-label">Быстрый совет</span><strong>Добавьте хорошее фото — оно задаёт настроение событию.</strong></div><div class="aside-card aside-light"><span class="aside-label">Как это работает</span><ol><li>Заполните форму</li><li>Добавьте фотографию</li><li>Нажмите «Опубликовать»</li></ol></div></aside>
       </div>
       <section class="admin-events"><div class="section-top"><div><p class="eyebrow">Управление</p><h2>Опубликованные<br /><span>события.</span></h2></div><span class="events-count" id="events-count">0 событий</span></div><div id="admin-events-list"></div></section>
+      <section class="admin-leaders admin-events"><div class="section-top"><div><p class="eyebrow">Команда</p><h2>Лидеры<br /><span>служения.</span></h2></div><span class="events-count" id="leaders-count">0 лидеров</span></div>
+        <div class="admin-layout leader-admin-layout">
+          <form class="event-form" id="leader-form">
+            <div class="form-title"><span class="form-number">02</span><div><h2>Добавить лидера</h2><p>Лидер появится на главной и странице служений.</p></div></div>
+            <label>Название служения<input name="title" required placeholder="Например, Молодёжное служение" /></label>
+            <label>Короткая категория<input name="tag" placeholder="Например, Служение молодёжи" /></label>
+            <label>Описание<textarea name="description" rows="4" required placeholder="Расскажите о служении"></textarea></label>
+            <label>Фото лидера или служения<input name="image" type="file" accept="image/*" /></label>
+            <button class="button button-dark" type="submit">Добавить лидера <span>↗</span></button>
+            <p class="form-message" id="leader-form-message" role="status"></p>
+          </form>
+          <aside class="admin-aside"><div class="aside-card aside-light"><span class="aside-label">Как это работает</span><ol><li>Заполните информацию</li><li>Добавьте фотографию</li><li>Нажмите «Добавить лидера»</li></ol></div></aside>
+        </div>
+        <div id="admin-leaders-list"></div>
+      </section>
     </main>
     <main class="login-main" id="login-screen">
       <section class="login-card">

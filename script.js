@@ -117,6 +117,11 @@ const eventsList = document.querySelector("#events-list");
 const adminEventsList = document.querySelector("#admin-events-list");
 const eventForm = document.querySelector("#event-form");
 const eventStorageKey = "philadelphia-events";
+const leadersList = document.querySelector("#leaders-list");
+const leadersPageList = document.querySelector("#leaders-page-list");
+const adminLeadersList = document.querySelector("#admin-leaders-list");
+const leaderForm = document.querySelector("#leader-form");
+const leaderStorageKey = "philadelphia-leaders";
 
 const readEvents = () => {
   try {
@@ -124,6 +129,43 @@ const readEvents = () => {
     return Array.isArray(stored) ? stored : [];
   } catch {
     return [];
+  }
+};
+
+const readLeaders = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(leaderStorageKey) || "[]");
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+};
+
+const leaderCardMarkup = (leader, compact = false) => {
+  const cardClass = compact ? "leader-preview-card" : "leader-card";
+  const photoClass = compact ? "leader-preview-photo" : "leader-photo";
+  const infoClass = compact ? "leader-preview-info" : "leader-info";
+  return `<article class="${cardClass}"><div class="${photoClass}" style="background-image:url('${leader.image}')"></div><div class="${infoClass}"><div><p>${leader.tag || "Служение"}</p><h3>${leader.title}</h3>${compact ? `<a href="leaders.html">Подробнее <span>→</span></a>` : `<small>${leader.description}</small>`}</div>${compact ? "" : "<span>↗</span>"}</div></article>`;
+};
+
+const renderLeaders = () => {
+  const leaders = readLeaders();
+  if (leadersList) {
+    leadersList.innerHTML = leaders.length ? leaders.slice(0, 3).map((leader) => leaderCardMarkup(leader, true)).join("") : '<div class="leader-empty">Пока нет добавленных лидеров служения.</div>';
+  }
+  if (leadersPageList) {
+    leadersPageList.innerHTML = leaders.length ? leaders.map((leader) => leaderCardMarkup(leader)).join("") : '<div class="leader-empty">Пока нет добавленных лидеров служения.</div>';
+  }
+  if (adminLeadersList) {
+    const count = document.querySelector("#leaders-count");
+    if (count) count.textContent = `${leaders.length} ${leaders.length === 1 ? "лидер" : "лидеров"}`;
+    adminLeadersList.innerHTML = leaders.length ? leaders.map((leader) => `<article class="admin-event"><div><strong>${leader.title}</strong><span>${leader.tag || "Служение"}</span></div><button type="button" data-delete-leader="${leader.id}">Удалить</button></article>`).join("") : "<p>Пока нет созданных лидеров.</p>";
+    adminLeadersList.querySelectorAll("[data-delete-leader]").forEach((button) => {
+      button.addEventListener("click", () => {
+        localStorage.setItem(leaderStorageKey, JSON.stringify(readLeaders().filter((leader) => leader.id !== button.dataset.deleteLeader)));
+        renderLeaders();
+      });
+    });
   }
 };
 
@@ -185,6 +227,34 @@ const renderEvents = () => {
   }
 };
 
+if (leaderForm) {
+  leaderForm.addEventListener("submit", (submitEvent) => {
+    submitEvent.preventDefault();
+    const formData = new FormData(leaderForm);
+    const file = formData.get("image");
+    const saveLeader = (image) => {
+      const leader = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        title: formData.get("title"),
+        tag: formData.get("tag"),
+        description: formData.get("description"),
+        image: image || "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
+      };
+      localStorage.setItem(leaderStorageKey, JSON.stringify([leader, ...readLeaders()]));
+      leaderForm.reset();
+      document.querySelector("#leader-form-message").textContent = "Лидер добавлен на сайт.";
+      renderLeaders();
+    };
+    if (file instanceof File && file.size) {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => saveLeader(reader.result));
+      reader.readAsDataURL(file);
+    } else {
+      saveLeader("");
+    }
+  });
+}
+
 if (eventForm) {
   eventForm.addEventListener("submit", (submitEvent) => {
     submitEvent.preventDefault();
@@ -217,3 +287,4 @@ if (eventForm) {
 }
 
 renderEvents();
+renderLeaders();

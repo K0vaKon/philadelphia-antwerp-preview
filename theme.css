@@ -591,3 +591,24 @@
     height: 190px;
   }
 }
+
+.leader-empty,
+.event-empty {
+  background: #eaf0f7;
+  color: #64738a;
+  grid-column: 1 / -1;
+  padding: 42px 28px;
+  text-align: center;
+}
+.admin-leaders {
+  border-top: 1px solid #d9e1eb;
+  padding-top: 20px;
+}
+.leader-admin-layout {
+  margin-bottom: 28px;
+}
+#admin-leaders-list {
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(20, 43, 74, .05);
+  padding: 0 24px;
+}
