@@ -318,6 +318,10 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => (
   "'": "&#39;",
 })[character]);
 
+const compareEventsByDate = (a, b) => (
+  a.date.localeCompare(b.date) || formatEventTime(a.time).localeCompare(formatEventTime(b.time))
+);
+
 const getUpcomingEvents = () => {
   const now = new Date();
   const maxDate = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
@@ -328,7 +332,7 @@ const getUpcomingEvents = () => {
       const eventDate = new Date(`${event.date}T00:00:00`);
       return eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate()) && eventDate <= maxDate;
     })
-    .sort((a, b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`))
+    .sort(compareEventsByDate)
     .slice(0, 3);
 };
 
@@ -341,7 +345,7 @@ const renderEvents = () => {
     if (!events.length) {
       eventsList.innerHTML = '<div class="event-empty">Сейчас нет событий ближайшие 3 месяца.</div>';
     } else {
-      events.slice().reverse().forEach((event, index) => {
+      events.forEach((event) => {
         const date = formatEventDate(event.date);
         const card = document.createElement("article");
         card.className = "event-card event-card-cover custom-event";
@@ -352,7 +356,7 @@ const renderEvents = () => {
   }
 
   if (adminEventsList) {
-    const allEvents = readEvents();
+    const allEvents = readEvents().sort(compareEventsByDate);
     const count = document.querySelector("#events-count");
     if (count) count.textContent = `${allEvents.length} ${allEvents.length === 1 ? "событие" : "событий"}`;
     adminEventsList.innerHTML = allEvents.length
