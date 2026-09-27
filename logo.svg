@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Логотип церкви Филадельфия</title>
+  <desc id="desc">Синий круг с золотым крестом</desc>
+  <circle cx="80" cy="80" r="76" fill="#142b4a"/>
+  <circle cx="80" cy="80" r="67" fill="none" stroke="#f3c94f" stroke-width="3"/>
+  <path d="M68 35h24v33h33v24H92v33H68V92H35V68h33z" fill="#f3c94f"/>
+</svg>

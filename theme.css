@@ -11,16 +11,21 @@
   background: #f3c94f;
 }
 
+.brand {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
 .brand-logo {
-  border-radius: 50%;
-  height: 42px;
-  object-fit: cover;
-  width: 42px;
+  height: 48px;
+  object-fit: contain;
+  width: 34px;
 }
 
 .footer-brand .brand-logo {
-  height: 48px;
-  width: 48px;
+  height: 58px;
+  width: 40px;
 }
 
 .nav-button,
@@ -284,11 +289,10 @@
   }
 
   .login-logo {
-    border-radius: 50%;
-    height: 54px;
+    height: 78px;
     margin-bottom: 32px;
-    object-fit: cover;
-    width: 54px;
+    object-fit: contain;
+    width: 56px;
   }
 
   .login-card h1 {
@@ -627,5 +631,120 @@
   .leader-photo {
     aspect-ratio: 4 / 5;
     height: auto;
+  }
+}
+
+.site-header {
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 8px 28px rgba(20, 43, 74, 0.12);
+  column-gap: 24px;
+}
+
+.beliefs {
+  background: #eaf0f7;
+  color: #142b4a;
+}
+
+.beliefs .beliefs-heading {
+  margin: 0 auto 42px;
+  max-width: 780px;
+  text-align: center;
+}
+
+.beliefs .beliefs-heading .eyebrow {
+  color: #b08213;
+}
+
+.beliefs .beliefs-heading h2 {
+  font-size: clamp(40px, 5vw, 64px);
+  margin-bottom: 16px;
+}
+
+.beliefs .beliefs-heading h2 span {
+  color: #b08213;
+}
+
+.beliefs .beliefs-heading > p:last-child {
+  color: #64738a;
+  font-size: 16px;
+  margin-bottom: 0;
+}
+
+.beliefs .beliefs-copy {
+  gap: 18px;
+}
+
+.beliefs .beliefs-copy p {
+  background: #fff;
+  border-top: 3px solid #f3c94f;
+  color: #52647a;
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 0;
+  padding: 26px;
+}
+
+.beliefs .scripture {
+  background: #142b4a;
+  border: 0;
+  border-radius: 3px;
+  color: #fff;
+  font-size: clamp(21px, 2.5vw, 29px);
+  line-height: 1.5;
+  margin: 42px 0 0;
+  padding: 32px 38px;
+}
+
+.beliefs .scripture cite {
+  color: #f3c94f;
+  display: block;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: .08em;
+  margin-top: 16px;
+  text-transform: uppercase;
+}
+
+.beliefs .donations {
+  border-color: #cbd6e3;
+}
+
+.beliefs .donations strong {
+  color: #142b4a;
+}
+
+.beliefs .donations span {
+  color: #64738a;
+}
+
+.beliefs .donations b {
+  color: #80691c;
+}
+
+@media (max-width: 800px) {
+  .beliefs .beliefs-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .beliefs .scripture {
+    padding: 26px 24px;
+  }
+}
+
+@media (min-width: 801px) {
+  .site-header .main-nav .active {
+    opacity: 1;
+    position: relative;
+  }
+
+  .site-header .main-nav .active::after {
+    background: #f3c94f;
+    bottom: -8px;
+    content: "";
+    height: 3px;
+    left: 0;
+    position: absolute;
+    right: 0;
   }
 }

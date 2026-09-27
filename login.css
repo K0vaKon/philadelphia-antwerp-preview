@@ -19,12 +19,11 @@
 }
 
 .login-logo {
-  border-radius: 50%;
   display: block;
-  height: 58px;
+  height: 84px;
   margin-bottom: 30px;
-  object-fit: cover;
-  width: 58px;
+  object-fit: contain;
+  width: 60px;
 }
 
 .login-card h1 {
