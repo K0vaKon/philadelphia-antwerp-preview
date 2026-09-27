@@ -24,10 +24,11 @@
       <form class="event-form" id="event-form">
         <div class="form-title"><span class="form-number">01</span><div><h2>Новое событие</h2><p>Заполните информацию о предстоящем событии.</p></div></div>
         <label>Название события<input name="title" required placeholder="Например, Вечер хвалы" /></label>
-        <div class="form-row"><label>Дата<input name="date" type="date" required /></label><label>Время<input name="time" type="time" required /></label></div>
+        <div class="form-row"><label>Дата<input name="date" type="date" required /></label><label>Время (24 часа)<input name="time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" pattern="^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="18:30" title="Введите время в формате 24 часа, например 18:30" required /></label></div>
         <label>Короткая категория<input name="tag" placeholder="Праздник, собрание, молодёжь" /></label>
         <label>Описание<textarea name="description" rows="4" required placeholder="Расскажите, что будет на событии"></textarea></label>
         <label>Фото события<input name="image" type="file" accept="image/*" /></label>
+        <p class="upload-hint">Поддерживаются JPEG, PNG, WebP и другие форматы изображений. Максимальный размер файла — 15 МБ. Фото оптимизируется перед сохранением.</p>
         <button class="button button-dark" type="submit">Опубликовать событие <span>↗</span></button>
         <p class="form-message" id="form-message" role="status"></p>
       </form>
@@ -42,6 +43,7 @@
             <label>Короткая категория<input name="tag" placeholder="Например, Служение молодёжи" /></label>
             <label>Описание<textarea name="description" rows="4" required placeholder="Расскажите о служении"></textarea></label>
             <label>Фото лидера или служения<input name="image" type="file" accept="image/*" /></label>
+            <p class="upload-hint">Поддерживаются JPEG, PNG, WebP и другие форматы изображений. Максимальный размер файла — 15 МБ. Фото оптимизируется перед сохранением.</p>
             <button class="button button-dark" type="submit">Добавить лидера <span>↗</span></button>
             <p class="form-message" id="leader-form-message" role="status"></p>
           </form>
@@ -74,7 +76,7 @@
         </form>
       </section>
     </main>
-    <script src="script.js"></script>
-    <script src="i18n.js"></script>
+    <script src="script.js?v=event-photo-cover-20260927"></script>
+    <script src="i18n.js?v=event-style-preview-24h"></script>
   </body>
 </html>

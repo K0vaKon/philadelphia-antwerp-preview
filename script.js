@@ -127,8 +127,93 @@ const importBackupInput = document.querySelector("#import-backup");
 const backupMessage = document.querySelector("#backup-message");
 const backupVersion = 1;
 const maxBackupSize = 15 * 1024 * 1024;
+const maxImageUploadSize = 15 * 1024 * 1024;
+const maxImageDimension = 1600;
+const maxStoredImageSize = 3 * 1024 * 1024;
 
 const isSafeImage = (value) => typeof value === "string" && (value === "" || value.startsWith("data:image/") || /^https:\/\/[^\s]+$/i.test(value));
+
+const prepareUploadedImage = async (value) => {
+  if (!(value instanceof File) || value.size === 0) return "";
+  if (!value.type.startsWith("image/")) {
+    throw new Error("Выберите файл изображения (например, JPEG, PNG или WebP).");
+  }
+  if (value.size > maxImageUploadSize) {
+    throw new Error("Размер фото превышает 15 МБ. Уменьшите файл и попробуйте снова.");
+  }
+
+  const objectUrl = URL.createObjectURL(value);
+  try {
+    const image = new Image();
+    image.src = objectUrl;
+    try {
+      await image.decode();
+    } catch {
+      throw new Error("Формат фото не поддерживается или файл повреждён. Попробуйте JPEG, PNG или WebP.");
+    }
+
+    if (!image.naturalWidth || !image.naturalHeight) {
+      throw new Error("Не удалось прочитать изображение. Выберите другой файл.");
+    }
+
+    const scale = Math.min(1, maxImageDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Браузер не смог обработать изображение.");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const optimizedImage = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error("Не удалось обработать изображение.")),
+        "image/jpeg",
+        0.82,
+      );
+    });
+
+    if (optimizedImage.size > maxStoredImageSize) {
+      throw new Error("Фото слишком большое даже после оптимизации. Выберите изображение поменьше.");
+    }
+
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("Не удалось подготовить фото для сохранения."));
+      });
+      reader.addEventListener("error", () => reject(new Error("Не удалось прочитать фото. Попробуйте другой файл.")));
+      reader.readAsDataURL(optimizedImage);
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
+const saveAdminRecord = (storageKey, record, messageElement, successMessage, render) => {
+  try {
+    const records = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    if (!Array.isArray(records)) throw new Error("Сохранённые данные повреждены. Сначала скачайте резервную копию.");
+    localStorage.setItem(storageKey, JSON.stringify([record, ...records]));
+  } catch (error) {
+    const isStorageFull = error instanceof DOMException
+      && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED");
+    messageElement.textContent = isStorageFull
+      ? "Не удалось сохранить: в браузере закончилось место. Удалите старые события или лидеров либо освободите место и попробуйте снова."
+      : `Не удалось сохранить: ${error instanceof Error ? error.message : "неизвестная ошибка браузера."}`;
+    messageElement.classList.add("form-message-error");
+    return false;
+  }
+
+  render();
+  messageElement.classList.remove("form-message-error");
+  messageElement.textContent = successMessage;
+  return true;
+};
+
 const normalizeBackupItems = (items, type) => {
   if (!Array.isArray(items) || items.length > 500) throw new Error(`Некорректные данные ${type}.`);
   return items.map((item) => {
@@ -217,6 +302,22 @@ const formatEventDate = (date) => {
   };
 };
 
+const formatEventTime = (time) => {
+  const value = String(time || "").trim();
+  const twelveHourTime = value.match(/^(\d{1,2}):([0-5]\d)\s*(AM|PM)$/i);
+  if (!twelveHourTime) return value;
+  const hour = Number(twelveHourTime[1]) % 12 + (twelveHourTime[3].toUpperCase() === "PM" ? 12 : 0);
+  return `${String(hour).padStart(2, "0")}:${twelveHourTime[2]}`;
+};
+
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+})[character]);
+
 const getUpcomingEvents = () => {
   const now = new Date();
   const maxDate = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
@@ -243,8 +344,8 @@ const renderEvents = () => {
       events.slice().reverse().forEach((event, index) => {
         const date = formatEventDate(event.date);
         const card = document.createElement("article");
-        card.className = `event-card custom-event${index === events.length - 1 ? " event-featured" : ""}`;
-        card.innerHTML = `<div class="event-image" style="background-image:url('${event.image}')"></div><div class="event-body"><div class="date"><strong>${date.day}</strong><span>${date.month}</span></div><div class="event-content"><p class="tag">${event.tag || "Событие"}</p><h3>${event.title}</h3><p class="event-description">${event.description}</p><p class="event-meta">${event.time || ""}</p></div></div>`;
+        card.className = "event-card event-card-cover custom-event";
+        card.innerHTML = `<img class="event-cover-image" src="${escapeHtml(event.image)}" alt="${escapeHtml(event.title)}" loading="lazy" /><span class="event-cover-date">${date.day} ${date.month}</span><div class="event-cover-content"><p class="tag">${escapeHtml(event.tag || "Событие")}</p><h3>${escapeHtml(event.title)}</h3><p class="event-description">${escapeHtml(event.description)}</p><p class="event-meta">${escapeHtml(formatEventTime(event.time))}</p></div>`;
         eventsList.append(card);
       });
     }
@@ -255,7 +356,7 @@ const renderEvents = () => {
     const count = document.querySelector("#events-count");
     if (count) count.textContent = `${allEvents.length} ${allEvents.length === 1 ? "событие" : "событий"}`;
     adminEventsList.innerHTML = allEvents.length
-      ? allEvents.map((event) => `<article class="admin-event"><div><strong>${event.title}</strong><span>${event.date} · ${event.time}</span></div><button type="button" data-delete-event="${event.id}">Удалить</button></article>`).join("")
+      ? allEvents.map((event) => `<article class="admin-event"><div><strong>${event.title}</strong><span>${event.date} · ${formatEventTime(event.time)}</span></div><button type="button" data-delete-event="${event.id}">Удалить</button></article>`).join("")
       : "<p>Пока нет созданных событий.</p>";
 
     adminEventsList.querySelectorAll("[data-delete-event]").forEach((button) => {
@@ -265,63 +366,63 @@ const renderEvents = () => {
       });
     });
   }
+
 };
 
 if (leaderForm) {
-  leaderForm.addEventListener("submit", (submitEvent) => {
+  leaderForm.addEventListener("submit", async (submitEvent) => {
     submitEvent.preventDefault();
+    const messageElement = document.querySelector("#leader-form-message");
+    if (!(messageElement instanceof HTMLElement)) return;
+    messageElement.classList.remove("form-message-error");
+    messageElement.textContent = "";
+
     const formData = new FormData(leaderForm);
-    const file = formData.get("image");
-    const saveLeader = (image) => {
+    try {
+      const image = await prepareUploadedImage(formData.get("image"));
       const leader = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        title: formData.get("title"),
-        tag: formData.get("tag"),
-        description: formData.get("description"),
+        title: String(formData.get("title") || "").trim(),
+        tag: String(formData.get("tag") || "").trim(),
+        description: String(formData.get("description") || "").trim(),
         image: image || "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
       };
-      localStorage.setItem(leaderStorageKey, JSON.stringify([leader, ...readLeaders()]));
-      leaderForm.reset();
-      document.querySelector("#leader-form-message").textContent = "Лидер добавлен на сайт.";
-      renderLeaders();
-    };
-    if (file instanceof File && file.size) {
-      const reader = new FileReader();
-      reader.addEventListener("load", () => saveLeader(reader.result));
-      reader.readAsDataURL(file);
-    } else {
-      saveLeader("");
+      if (saveAdminRecord(leaderStorageKey, leader, messageElement, "Лидер добавлен на сайт.", renderLeaders)) {
+        leaderForm.reset();
+      }
+    } catch (error) {
+      messageElement.classList.add("form-message-error");
+      messageElement.textContent = error instanceof Error ? error.message : "Не удалось добавить лидера. Проверьте фото и попробуйте снова.";
     }
   });
 }
 
 if (eventForm) {
-  eventForm.addEventListener("submit", (submitEvent) => {
+  eventForm.addEventListener("submit", async (submitEvent) => {
     submitEvent.preventDefault();
+    const messageElement = document.querySelector("#form-message");
+    if (!(messageElement instanceof HTMLElement)) return;
+    messageElement.classList.remove("form-message-error");
+    messageElement.textContent = "";
+
     const formData = new FormData(eventForm);
-    const file = formData.get("image");
-    const saveEvent = (image) => {
+    try {
+      const image = await prepareUploadedImage(formData.get("image"));
       const event = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        title: formData.get("title"),
-        date: formData.get("date"),
-        time: formData.get("time"),
-        tag: formData.get("tag"),
-        description: formData.get("description"),
+        title: String(formData.get("title") || "").trim(),
+        date: String(formData.get("date") || ""),
+        time: String(formData.get("time") || ""),
+        tag: String(formData.get("tag") || "").trim(),
+        description: String(formData.get("description") || "").trim(),
         image: image || "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&w=900&q=80",
       };
-      localStorage.setItem(eventStorageKey, JSON.stringify([event, ...readEvents()]));
-      eventForm.reset();
-      document.querySelector("#form-message").textContent = "Событие опубликовано на главной странице.";
-      renderEvents();
-    };
-
-    if (file instanceof File && file.size) {
-      const reader = new FileReader();
-      reader.addEventListener("load", () => saveEvent(reader.result));
-      reader.readAsDataURL(file);
-    } else {
-      saveEvent("");
+      if (saveAdminRecord(eventStorageKey, event, messageElement, "Событие опубликовано на главной странице.", renderEvents)) {
+        eventForm.reset();
+      }
+    } catch (error) {
+      messageElement.classList.add("form-message-error");
+      messageElement.textContent = error instanceof Error ? error.message : "Не удалось создать событие. Проверьте фото и попробуйте снова.";
     }
   });
 }
