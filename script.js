@@ -139,6 +139,7 @@ const galleryCount = document.querySelector("#gallery-count");
 const galleryFormMessage = document.querySelector("#gallery-form-message");
 const galleryLoadMoreButton = document.querySelector("#gallery-load-more");
 const galleryStorageKey = "philadelphia-gallery";
+const contentLanguages = ["nl", "en"];
 const galleryBatchSize = 12;
 let galleryPhotos = [];
 let galleryRenderedCount = 0;
@@ -393,25 +394,144 @@ if (galleryLoadMoreButton) {
   galleryLoadMoreButton.addEventListener("click", renderNextGalleryBatch);
 }
 
+const getCurrentLanguage = () => {
+  const language = localStorage.getItem("philadelphia-language");
+  return ["ru", "nl", "en"].includes(language) ? language : "ru";
+};
+
+const getLocalizedRecordField = (record, field) => {
+  const language = getCurrentLanguage();
+  return language === "ru"
+    ? record[field] || ""
+    : record.translations?.[language]?.[field] || record[field] || "";
+};
+
+const getDynamicLabel = (key) => {
+  const language = getCurrentLanguage();
+  const labels = {
+    service: { ru: "Служение", nl: "Bediening", en: "Ministry" },
+    event: { ru: "Событие", nl: "Evenement", en: "Event" },
+    remove: { ru: "Удалить", nl: "Verwijderen", en: "Delete" },
+    editRecord: { ru: "Редактировать", nl: "Bewerken", en: "Edit" },
+    saveRecord: { ru: "Сохранить изменения", nl: "Wijzigingen opslaan", en: "Save changes" },
+    saved: { ru: "Изменения сохранены.", nl: "Wijzigingen opgeslagen.", en: "Changes saved." },
+    source: { ru: "Исходный текст (русский)", nl: "Brontekst (Russisch)", en: "Source text (Russian)" },
+    title: { ru: "Название", nl: "Titel", en: "Title" },
+    category: { ru: "Категория", nl: "Categorie", en: "Category" },
+    description: { ru: "Описание", nl: "Beschrijving", en: "Description" },
+    date: { ru: "Дата", nl: "Datum", en: "Date" },
+    time: { ru: "Время", nl: "Tijd", en: "Time" },
+    image: { ru: "Фотография", nl: "Foto", en: "Photo" },
+    noLeaders: { ru: "Пока нет добавленных лидеров служения.", nl: "Er zijn nog geen bedieningsleiders toegevoegd.", en: "No ministry leaders have been added yet." },
+    noAdminLeaders: { ru: "Пока нет созданных лидеров.", nl: "Er zijn nog geen leiders toegevoegd.", en: "No leaders have been added yet." },
+    noAdminEvents: { ru: "Пока нет созданных событий.", nl: "Er zijn nog geen evenementen toegevoegd.", en: "No events have been added yet." },
+    noEvents: { ru: "Сейчас нет событий ближайшие 3 месяца.", nl: "Er zijn de komende 3 maanden geen evenementen.", en: "There are no events in the next 3 months." },
+  };
+  return labels[key]?.[language] || "";
+};
+
+const createRecordTranslations = (formData) => Object.fromEntries(contentLanguages.map((language) => {
+  const fields = Object.fromEntries(["title", "tag", "description"].map((field) => [
+    field,
+    String(formData.get(`translations.${language}.${field}`) || "").trim(),
+  ]));
+  return [language, fields];
+}).filter(([, fields]) => Object.values(fields).some(Boolean)));
+
+const recordEditorMarkup = (record, type) => {
+  const fieldLabels = {
+    title: getDynamicLabel("title"),
+    tag: getDynamicLabel("category"),
+    description: getDynamicLabel("description"),
+  };
+  const sourceFields = `<fieldset><legend>${getDynamicLabel("source")}</legend>
+    <label>${fieldLabels.title}<input name="title" value="${escapeHtml(record.title || "")}" required /></label>
+    ${type === "event" ? `<label>${getDynamicLabel("date")}<input name="date" type="date" value="${escapeHtml(record.date || "")}" required /></label><label>${getDynamicLabel("time")}<input name="time" type="time" value="${escapeHtml(formatEventTime(record.time || ""))}" required /></label>` : ""}
+    <label>${fieldLabels.tag}<input name="tag" value="${escapeHtml(record.tag || "")}" /></label>
+    <label>${fieldLabels.description}<textarea name="description" rows="3">${escapeHtml(record.description || "")}</textarea></label>
+  </fieldset>`;
+  const translationFields = contentLanguages.map((language) => {
+    const values = record.translations?.[language] || {};
+    return `<fieldset><legend>${language === "nl" ? "Nederlands" : "English"}</legend>${["title", "tag", "description"].map((field) => {
+      const value = escapeHtml(values[field] || "");
+      const input = field === "description"
+        ? `<textarea name="translations.${language}.${field}">${value}</textarea>`
+        : `<input name="translations.${language}.${field}" value="${value}" />`;
+      return `<label>${fieldLabels[field]}${input}</label>`;
+    }).join("")}</fieldset>`;
+  }).join("");
+  return `<details class="admin-record-editor"><summary>${getDynamicLabel("editRecord")}</summary><form data-record-editor="${type}" data-record-id="${escapeHtml(record.id)}">${sourceFields}${translationFields}<label>${getDynamicLabel("image")}<input name="image" type="file" accept="image/*" /></label><img class="admin-edit-image" src="${escapeHtml(record.image || "")}" alt="${getDynamicLabel("image")}" loading="lazy" /><button class="button button-dark" type="submit">${getDynamicLabel("saveRecord")}</button><p class="record-save-message" role="status"></p></form></details>`;
+};
+
+const bindRecordEditors = (container, storageKey, type, render) => {
+  container.querySelectorAll("form[data-record-editor]").forEach((form) => {
+    form.addEventListener("submit", async (submitEvent) => {
+      submitEvent.preventDefault();
+      const message = form.querySelector(".record-save-message");
+      try {
+        const records = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        if (!Array.isArray(records)) throw new Error("Сохранённые записи имеют неверный формат.");
+        const record = records.find((item) => item.id === form.dataset.recordId);
+        if (!record) throw new Error("Запись не найдена. Обновите страницу и попробуйте снова.");
+
+        const formData = new FormData(form);
+        const image = await prepareUploadedImage(formData.get("image"));
+        const updatedRecord = {
+          ...record,
+          title: String(formData.get("title") || "").trim(),
+          tag: String(formData.get("tag") || "").trim(),
+          description: String(formData.get("description") || "").trim(),
+          translations: createRecordTranslations(formData),
+          image: image || record.image,
+        };
+        if (type === "event") {
+          updatedRecord.date = String(formData.get("date") || "");
+          updatedRecord.time = String(formData.get("time") || "");
+        }
+        if (!updatedRecord.title || (type === "event" && (!updatedRecord.date || !updatedRecord.time))) {
+          throw new Error("Заполните все обязательные поля.");
+        }
+
+        const updatedRecords = records.map((item) => item.id === updatedRecord.id ? updatedRecord : item);
+        localStorage.setItem(storageKey, JSON.stringify(updatedRecords));
+        render();
+        const updatedForm = [...container.querySelectorAll("form[data-record-editor]")]
+          .find((item) => item.dataset.recordId === updatedRecord.id);
+        const updatedMessage = updatedForm?.querySelector(".record-save-message");
+        if (updatedForm) updatedForm.closest("details").open = true;
+        if (updatedMessage) updatedMessage.textContent = getDynamicLabel("saved");
+      } catch (error) {
+        if (message) message.textContent = error instanceof Error ? error.message : "Не удалось сохранить изменения.";
+      }
+    });
+  });
+};
+
 const leaderCardMarkup = (leader, compact = false) => {
   const cardClass = compact ? "leader-preview-card" : "leader-card";
   const photoClass = compact ? "leader-preview-photo" : "leader-photo";
   const infoClass = compact ? "leader-preview-info" : "leader-info";
-  return `<article class="${cardClass}"><div class="${photoClass}" style="background-image:url('${leader.image}')"></div><div class="${infoClass}"><div><p>${leader.tag || "Служение"}</p><h3>${leader.title}</h3>${compact ? `<a href="leaders.html">Подробнее <span>→</span></a>` : `<small>${leader.description}</small>`}</div>${compact ? "" : "<span>↗</span>"}</div></article>`;
+  return `<article class="${cardClass}"><div class="${photoClass}" style="background-image:url('${escapeHtml(leader.image)}')"></div><div class="${infoClass}"><div><p>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel("service"))}</p><h3>${escapeHtml(getLocalizedRecordField(leader, "title"))}</h3>${compact ? `<a href="leaders.html">Подробнее <span>→</span></a>` : `<small>${escapeHtml(getLocalizedRecordField(leader, "description"))}</small>`}</div>${compact ? "" : "<span>↗</span>"}</div></article>`;
 };
 
 const renderLeaders = () => {
   const leaders = readLeaders();
   if (leadersList) {
-    leadersList.innerHTML = leaders.length ? leaders.slice(0, 3).map((leader) => leaderCardMarkup(leader, true)).join("") : '<div class="leader-empty">Пока нет добавленных лидеров служения.</div>';
+    leadersList.innerHTML = leaders.length ? leaders.slice(0, 3).map((leader) => leaderCardMarkup(leader, true)).join("") : `<div class="leader-empty">${getDynamicLabel("noLeaders")}</div>`;
   }
   if (leadersPageList) {
-    leadersPageList.innerHTML = leaders.length ? leaders.map((leader) => leaderCardMarkup(leader)).join("") : '<div class="leader-empty">Пока нет добавленных лидеров служения.</div>';
+    leadersPageList.innerHTML = leaders.length ? leaders.map((leader) => leaderCardMarkup(leader)).join("") : `<div class="leader-empty">${getDynamicLabel("noLeaders")}</div>`;
   }
   if (adminLeadersList) {
     const count = document.querySelector("#leaders-count");
-    if (count) count.textContent = `${leaders.length} ${leaders.length === 1 ? "лидер" : "лидеров"}`;
-    adminLeadersList.innerHTML = leaders.length ? leaders.map((leader) => `<article class="admin-event"><div><strong>${leader.title}</strong><span>${leader.tag || "Служение"}</span></div><button type="button" data-delete-leader="${leader.id}">Удалить</button></article>`).join("") : "<p>Пока нет созданных лидеров.</p>";
+    const language = getCurrentLanguage();
+    if (count) count.textContent = language === "nl"
+      ? `${leaders.length} leiders`
+      : language === "en"
+        ? `${leaders.length} ${leaders.length === 1 ? "leader" : "leaders"}`
+        : `${leaders.length} ${leaders.length === 1 ? "лидер" : "лидеров"}`;
+    adminLeadersList.innerHTML = leaders.length ? leaders.map((leader) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(leader, "title"))}</strong><span>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel("service"))}</span></div><button type="button" data-delete-leader="${escapeHtml(leader.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(leader, "leader")}</article>`).join("") : `<p>${getDynamicLabel("noAdminLeaders")}</p>`;
+    bindRecordEditors(adminLeadersList, leaderStorageKey, "leader", renderLeaders);
     adminLeadersList.querySelectorAll("[data-delete-leader]").forEach((button) => {
       button.addEventListener("click", () => {
         localStorage.setItem(leaderStorageKey, JSON.stringify(readLeaders().filter((leader) => leader.id !== button.dataset.deleteLeader)));
@@ -423,9 +543,10 @@ const renderLeaders = () => {
 
 const formatEventDate = (date) => {
   const parsed = new Date(`${date}T00:00:00`);
+  const locale = { ru: "ru-RU", nl: "nl-BE", en: "en-GB" }[getCurrentLanguage()];
   return {
-    day: parsed.toLocaleDateString("ru-RU", { day: "2-digit" }),
-    month: parsed.toLocaleDateString("ru-RU", { month: "short" }).replace(".", "").toUpperCase(),
+    day: parsed.toLocaleDateString(locale, { day: "2-digit" }),
+    month: parsed.toLocaleDateString(locale, { month: "short" }).replace(".", "").toUpperCase(),
   };
 };
 
@@ -470,13 +591,13 @@ const renderEvents = () => {
     eventsList.innerHTML = "";
 
     if (!events.length) {
-      eventsList.innerHTML = '<div class="event-empty">Сейчас нет событий ближайшие 3 месяца.</div>';
+      eventsList.innerHTML = `<div class="event-empty">${getDynamicLabel("noEvents")}</div>`;
     } else {
       events.forEach((event) => {
         const date = formatEventDate(event.date);
         const card = document.createElement("article");
         card.className = "event-card event-card-cover custom-event";
-        card.innerHTML = `<img class="event-cover-image" src="${escapeHtml(event.image)}" alt="${escapeHtml(event.title)}" loading="lazy" /><span class="event-cover-date">${date.day} ${date.month}</span><div class="event-cover-content"><p class="tag">${escapeHtml(event.tag || "Событие")}</p><h3>${escapeHtml(event.title)}</h3><p class="event-description">${escapeHtml(event.description)}</p><p class="event-meta">${escapeHtml(formatEventTime(event.time))}</p></div>`;
+        card.innerHTML = `<img class="event-cover-image" src="${escapeHtml(event.image)}" alt="${escapeHtml(getLocalizedRecordField(event, "title"))}" loading="lazy" /><span class="event-cover-date">${date.day} ${date.month}</span><div class="event-cover-content"><p class="tag">${escapeHtml(getLocalizedRecordField(event, "tag") || getDynamicLabel("event"))}</p><h3>${escapeHtml(getLocalizedRecordField(event, "title"))}</h3><p class="event-description">${escapeHtml(getLocalizedRecordField(event, "description"))}</p><p class="event-meta">${escapeHtml(formatEventTime(event.time))}</p></div>`;
         eventsList.append(card);
       });
     }
@@ -485,11 +606,17 @@ const renderEvents = () => {
   if (adminEventsList) {
     const allEvents = readEvents().sort(compareEventsByDate);
     const count = document.querySelector("#events-count");
-    if (count) count.textContent = `${allEvents.length} ${allEvents.length === 1 ? "событие" : "событий"}`;
+    const language = getCurrentLanguage();
+    if (count) count.textContent = language === "nl"
+      ? `${allEvents.length} evenementen`
+      : language === "en"
+        ? `${allEvents.length} ${allEvents.length === 1 ? "event" : "events"}`
+        : `${allEvents.length} ${allEvents.length === 1 ? "событие" : "событий"}`;
     adminEventsList.innerHTML = allEvents.length
-      ? allEvents.map((event) => `<article class="admin-event"><div><strong>${event.title}</strong><span>${event.date} · ${formatEventTime(event.time)}</span></div><button type="button" data-delete-event="${event.id}">Удалить</button></article>`).join("")
-      : "<p>Пока нет созданных событий.</p>";
+      ? allEvents.map((event) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(event, "title"))}</strong><span>${escapeHtml(event.date)} · ${escapeHtml(formatEventTime(event.time))}</span></div><button type="button" data-delete-event="${escapeHtml(event.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(event, "event")}</article>`).join("")
+      : `<p>${getDynamicLabel("noAdminEvents")}</p>`;
 
+    bindRecordEditors(adminEventsList, eventStorageKey, "event", renderEvents);
     adminEventsList.querySelectorAll("[data-delete-event]").forEach((button) => {
       button.addEventListener("click", () => {
         localStorage.setItem(eventStorageKey, JSON.stringify(readEvents().filter((event) => event.id !== button.dataset.deleteEvent)));
@@ -516,6 +643,7 @@ if (leaderForm) {
         title: String(formData.get("title") || "").trim(),
         tag: String(formData.get("tag") || "").trim(),
         description: String(formData.get("description") || "").trim(),
+        translations: createRecordTranslations(formData),
         image: image || "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
       };
       if (saveAdminRecord(leaderStorageKey, leader, messageElement, "Лидер добавлен на сайт.", renderLeaders)) {
@@ -546,6 +674,7 @@ if (eventForm) {
         time: String(formData.get("time") || ""),
         tag: String(formData.get("tag") || "").trim(),
         description: String(formData.get("description") || "").trim(),
+        translations: createRecordTranslations(formData),
         image: image || "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&w=900&q=80",
       };
       if (saveAdminRecord(eventStorageKey, event, messageElement, "Событие опубликовано на главной странице.", renderEvents)) {

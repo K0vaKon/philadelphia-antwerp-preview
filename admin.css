@@ -3,6 +3,24 @@
 .upload-hint { color: #64738a; font-size: 12px; margin: -14px 0 0; }
 .admin-header-actions{align-items:center;display:flex;gap:22px}.logout-button{background:transparent;border:1px solid #cfdae7;color:#142b4a;cursor:pointer;font:inherit;font-size:11px;padding:10px 15px}.logout-button:hover{background:#eaf0f7}
 
+.translation-fields{border:1px solid #d9e1eb;padding:16px}
+.translation-fields>summary{color:#142b4a;cursor:pointer;font-size:12px;font-weight:700}
+.translation-fields>p{color:#64738a;font-size:12px;margin:10px 0}
+.translation-language{border-top:1px solid #d9e1eb;display:grid;gap:14px;margin-top:16px;padding-top:16px}
+.translation-language>strong{color:#b08213;font-size:12px}
+.admin-event{flex-wrap:wrap}
+.admin-record-editor{flex:1 1 100%;margin-top:12px;width:100%}
+.admin-record-editor>summary{color:#142b4a;cursor:pointer;font-size:12px;font-weight:700}
+.admin-record-editor form{display:grid;gap:12px;margin:14px 0}
+.admin-record-editor fieldset{border:1px solid #d9e1eb;display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr));padding:12px}
+.admin-record-editor legend{color:#b08213;font-size:12px;font-weight:700;padding:0 6px}
+.admin-record-editor label{color:#142b4a;display:grid;font-size:10px;font-weight:700;gap:6px}
+.admin-record-editor input,.admin-record-editor textarea{background:#fff;border:1px solid #cfdae7;color:#142b4a;font:inherit;font-size:13px;letter-spacing:0;padding:9px;text-transform:none;width:100%}
+.admin-record-editor textarea{min-height:70px;resize:vertical}
+.admin-record-editor button{justify-self:start}
+.admin-edit-image{background:#eaf0f7;max-height:150px;max-width:220px;object-fit:cover}
+.record-save-message{color:#26734d;font-size:12px;margin:0}
+
 .admin-backup {
   border-top: 1px solid #d9e1eb;
 }
@@ -43,4 +61,5 @@
 @media(max-width:800px){
   .backup-card{padding:22px}
   .backup-actions .button,.backup-import-button{width:100%}
+  .admin-record-editor fieldset{grid-template-columns:1fr}
 }
