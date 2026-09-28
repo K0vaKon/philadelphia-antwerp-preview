@@ -798,6 +798,121 @@
   margin: 0;
 }
 
+.leaders .leader-grid {
+  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.leaders .leader-card {
+  aspect-ratio: 4 / 5;
+  background: #142b4a;
+  color: #fff;
+  min-height: 320px;
+  overflow: hidden;
+  position: relative;
+}
+
+.leaders .leader-card::after {
+  background: linear-gradient(180deg, rgba(10, 28, 51, .05) 20%, rgba(10, 28, 51, .92) 100%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.leaders .leader-photo {
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  transition: transform .45s ease;
+}
+
+.leaders .leader-card:hover .leader-photo {
+  transform: scale(1.04);
+}
+
+.leaders .leader-info {
+  align-items: end;
+  bottom: 0;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  left: 0;
+  padding: 20px;
+  position: absolute;
+  right: 0;
+  z-index: 1;
+}
+
+.leaders .leader-info > div {
+  min-width: 0;
+}
+
+.leaders .leader-info p {
+  color: #f3c94f;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  margin: 0 0 7px;
+  text-transform: uppercase;
+}
+
+.leaders .leader-info h3 {
+  color: #fff;
+  font-size: clamp(17px, 1.8vw, 22px);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.leaders .leader-info small {
+  color: rgba(255, 255, 255, .84);
+  display: -webkit-box;
+  font-size: 12px;
+  grid-column: auto;
+  line-height: 1.45;
+  margin-top: 8px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.leaders .leader-info > span {
+  color: #f3c94f;
+  flex: 0 0 auto;
+  font-size: 18px;
+}
+
+@media (max-width: 800px) {
+  .leaders .leader-grid {
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .leaders .leader-card {
+    aspect-ratio: 4 / 5;
+    min-height: 0;
+  }
+
+  .leaders .leader-info {
+    padding: 14px;
+  }
+
+  .leaders .leader-info small {
+    font-size: 11px;
+    -webkit-line-clamp: 2;
+  }
+}
+
+@media (max-width: 360px) {
+  .leaders .leader-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .leaders .leader-card {
+    aspect-ratio: 4 / 3;
+  }
+}
+
 .admin-directory {
   border-top: 1px solid #d9e1eb;
   padding-top: 20px;
