@@ -31,6 +31,10 @@
 .admin-record-editor button{justify-self:start}
 .admin-edit-image{background:#eaf0f7;max-height:150px;max-width:220px;object-fit:cover}
 .record-save-message{color:#26734d;font-size:12px;margin:0}
+.admin-record-order{display:flex;flex:0 0 auto;gap:4px}
+.admin-record-order button{align-items:center;background:#fff;border:1px solid #cfdae7;border-radius:3px;color:#142b4a;cursor:pointer;display:flex;font:inherit;font-size:14px;height:34px;justify-content:center;width:34px}
+.admin-record-order button:disabled{cursor:not-allowed;opacity:.4}
+.record-order-message{color:#a33d3d;flex:1 1 100%;font-size:12px;grid-column:1/-1;margin:0}
 
 .admin-backup {
   border-top: 1px solid #d9e1eb;
@@ -75,4 +79,225 @@
   .admin-record-editor fieldset{grid-template-columns:1fr}
   .admin-tabs{margin:0 -6% 28px;padding:8px 6%}
   .admin-tabs button{padding:11px 13px}
+}
+
+@media (max-width: 800px) {
+  .admin-page .site-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .admin-page .brand {
+    align-self: flex-start;
+  }
+
+  .admin-page .admin-header-actions {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    justify-content: flex-start;
+  }
+
+  .admin-main {
+    min-width: 0;
+    padding: 38px 16px 64px;
+  }
+
+  .admin-heading,
+  .admin-tab-panel,
+  .admin-layout,
+  .admin-records,
+  .admin-backup,
+  .event-form,
+  .admin-aside,
+  .admin-record-list {
+    min-width: 0;
+  }
+
+  .admin-heading {
+    margin-bottom: 32px;
+  }
+
+  .admin-heading h1 {
+    font-size: clamp(44px, 12vw, 64px);
+    overflow-wrap: anywhere;
+  }
+
+  .admin-heading > p {
+    max-width: none;
+  }
+
+  .admin-tabs {
+    margin: 0 -16px 28px;
+    padding: 8px 16px;
+    scrollbar-width: thin;
+  }
+
+  .event-form {
+    padding: 24px 18px;
+  }
+
+  .form-title {
+    gap: 12px;
+  }
+
+  .form-title > div {
+    min-width: 0;
+  }
+
+  .form-title h2 {
+    font-size: 24px;
+    overflow-wrap: anywhere;
+  }
+
+  .form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .event-form input,
+  .event-form textarea,
+  .event-form select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .event-form input[type="file"] {
+    font-size: 12px;
+    max-width: 100%;
+  }
+
+  .event-form > .button {
+    gap: 12px;
+    justify-content: space-between;
+    max-width: 100%;
+    min-width: 0;
+    text-align: left;
+    white-space: normal;
+    width: 100%;
+  }
+
+  .upload-hint,
+  .translation-fields,
+  .translation-language,
+  .backup-card,
+  .backup-actions {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-events .section-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .admin-events h2 {
+    font-size: clamp(32px, 9vw, 42px);
+    overflow-wrap: anywhere;
+  }
+
+  .admin-record-list,
+  .admin-gallery-list-section #admin-gallery-list {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .admin-event {
+    align-items: start;
+    display: grid;
+    gap: 10px 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-event > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-event > button {
+    justify-self: end;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    padding: 8px 0 8px 8px;
+  }
+
+  .admin-record-editor {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .admin-record-editor form,
+  .admin-record-editor fieldset {
+    min-width: 0;
+  }
+
+  .admin-record-editor fieldset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-record-editor input,
+  .admin-record-editor textarea,
+  .admin-record-editor select {
+    min-width: 0;
+  }
+
+  .admin-record-editor button {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .admin-edit-image {
+    height: auto;
+    max-width: 100%;
+  }
+
+  .backup-card {
+    padding: 20px 16px;
+  }
+
+  .backup-actions .button,
+  .backup-import-button {
+    justify-content: space-between;
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+    width: 100%;
+  }
+
+  .admin-gallery-photo > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-page .admin-header-actions {
+    align-items: flex-start;
+  }
+
+  .admin-page .admin-header-actions .text-link {
+    gap: 8px;
+  }
+
+  .admin-main {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .admin-tabs {
+    margin-right: -12px;
+    margin-left: -12px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .event-form {
+    padding: 20px 14px;
+  }
+
+  .login-card {
+    padding: 28px 20px;
+  }
 }

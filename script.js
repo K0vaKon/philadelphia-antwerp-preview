@@ -495,6 +495,8 @@ const getDynamicLabel = (key) => {
     presbyter: { ru: "Пресвитер", nl: "Ouderling", en: "Presbyter" },
     event: { ru: "Событие", nl: "Evenement", en: "Event" },
     remove: { ru: "Удалить", nl: "Verwijderen", en: "Delete" },
+    moveUp: { ru: "Переместить выше", nl: "Omhoog verplaatsen", en: "Move up" },
+    moveDown: { ru: "Переместить ниже", nl: "Omlaag verplaatsen", en: "Move down" },
     editRecord: { ru: "Редактировать", nl: "Bewerken", en: "Edit" },
     saveRecord: { ru: "Сохранить изменения", nl: "Wijzigingen opslaan", en: "Save changes" },
     saved: { ru: "Изменения сохранены.", nl: "Wijzigingen opgeslagen.", en: "Changes saved." },
@@ -662,7 +664,7 @@ const getWeekdaySelect = (selectedDay = "") => {
   return `<select name="day" required><option value="">${getDynamicLabel("selectDay")}</option>${days.map((day) => `<option value="${day}"${day === selectedDay ? " selected" : ""}>${getDynamicLabel(day)}</option>`).join("")}</select>`;
 };
 
-const homeGroupCardMarkup = (record, compact, index) => {
+const homeGroupCardMarkup = (record, compact) => {
   const leader = getLocalizedHomeGroupField(record, "leader");
   const location = getLocalizedHomeGroupField(record, "location");
   const day = record.day ? getDynamicLabel(record.day) : "";
@@ -670,7 +672,6 @@ const homeGroupCardMarkup = (record, compact, index) => {
   return `<article class="home-group-card${compact ? " home-group-card-compact" : ""}">
     <div class="home-group-orbit" aria-hidden="true">
       <div class="home-group-photo" style="background-image:url('${escapeHtml(record.image)}')"></div>
-      <span class="home-group-number">${String(index + 1).padStart(2, "0")}</span>
     </div>
     <div class="home-group-info">
       <p class="home-group-tag">${escapeHtml(location || getDynamicLabel("homeGroup"))}</p>
@@ -685,8 +686,8 @@ const homeGroupCardMarkup = (record, compact, index) => {
 const renderDirectory = (records, list, emptyLabel, type, compact = false) => {
   if (!list) return;
   list.innerHTML = records.length
-    ? records.map((record, index) => type === "homeGroup"
-      ? homeGroupCardMarkup(record, compact, index)
+    ? records.map((record) => type === "homeGroup"
+      ? homeGroupCardMarkup(record, compact)
       : leaderCardMarkup(record, compact, type)).join("")
     : `<p class="directory-empty">${getDynamicLabel(emptyLabel)}</p>`;
 };
@@ -695,15 +696,50 @@ const renderAdminDirectory = (records, container, storageKey, type, render) => {
   if (!container) return;
   updateAdminRecordCount(container, records.length, type);
   container.innerHTML = records.length
-    ? records.map((record) => {
+    ? records.map((record, index) => {
       const title = type === "homeGroup" ? getLocalizedHomeGroupField(record, "leader") : getLocalizedRecordField(record, "title");
       const details = type === "homeGroup"
         ? [getLocalizedHomeGroupField(record, "location"), record.day ? getDynamicLabel(record.day) : ""].filter(Boolean).join(" · ")
         : getLocalizedRecordField(record, "tag") || getDynamicLabel(type);
-      return `<article class="admin-event"><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(details)}</span></div><button type="button" data-delete-record="${escapeHtml(record.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(record, type)}</article>`;
+      const orderControls = type === "homeGroup"
+        ? `<div class="admin-record-order"><button type="button" data-move-home-group="up" data-record-id="${escapeHtml(record.id)}" aria-label="${getDynamicLabel("moveUp")}" title="${getDynamicLabel("moveUp")}"${index === 0 ? " disabled" : ""}>↑</button><button type="button" data-move-home-group="down" data-record-id="${escapeHtml(record.id)}" aria-label="${getDynamicLabel("moveDown")}" title="${getDynamicLabel("moveDown")}"${index === records.length - 1 ? " disabled" : ""}>↓</button></div>`
+        : "";
+      const orderMessage = type === "homeGroup" ? '<p class="record-order-message" role="status" hidden></p>' : "";
+      return `<article class="admin-event"><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(details)}</span></div>${orderControls}<button type="button" data-delete-record="${escapeHtml(record.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(record, type)}${orderMessage}</article>`;
     }).join("")
     : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
   bindRecordEditors(container, storageKey, type, render);
+  if (type === "homeGroup") {
+    container.querySelectorAll("[data-move-home-group]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const storedRecords = readRecords(storageKey);
+        const currentIndex = storedRecords.findIndex((record) => record.id === button.dataset.recordId);
+        const direction = button.dataset.moveHomeGroup === "up" ? -1 : 1;
+        const nextIndex = currentIndex + direction;
+        if (currentIndex < 0 || nextIndex < 0 || nextIndex >= storedRecords.length) return;
+
+        [storedRecords[currentIndex], storedRecords[nextIndex]] = [storedRecords[nextIndex], storedRecords[currentIndex]];
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(storedRecords));
+        } catch (error) {
+          const message = button.closest(".admin-event")?.querySelector(".record-order-message");
+          if (message) {
+            message.hidden = false;
+            message.textContent = `Не удалось сохранить порядок домашних групп: ${error instanceof Error ? error.message : "ошибка браузера."}`;
+          }
+          return;
+        }
+
+        render();
+        const movedRecord = [...container.querySelectorAll(".admin-event")]
+          .find((item) => item.querySelector("[data-record-id]")?.dataset.recordId === button.dataset.recordId);
+        const focusButton = [...(movedRecord?.querySelectorAll("[data-move-home-group]") || [])]
+          .find((item) => item.dataset.moveHomeGroup === button.dataset.moveHomeGroup && !item.disabled)
+          || [...(movedRecord?.querySelectorAll("[data-move-home-group]") || [])].find((item) => !item.disabled);
+        focusButton?.focus();
+      });
+    });
+  }
   container.querySelectorAll("[data-delete-record]").forEach((button) => {
     button.addEventListener("click", () => {
       localStorage.setItem(storageKey, JSON.stringify(readRecords(storageKey).filter((record) => record.id !== button.dataset.deleteRecord)));
