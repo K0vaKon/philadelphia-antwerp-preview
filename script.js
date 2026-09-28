@@ -5,6 +5,7 @@ const loginScreen = document.querySelector("#login-screen");
 const loginForm = document.querySelector("#login-form");
 const logoutButton = document.querySelector("#logout-button");
 const adminSessionKey = "philadelphia-admin-auth";
+const adminNavigationKey = "philadelphia-admin-navigation";
 const adminPassword = "admin";
 
 const showAdmin = () => {
@@ -14,6 +15,7 @@ const showAdmin = () => {
 };
 
 if (adminContent && loginScreen) {
+  sessionStorage.removeItem(adminNavigationKey);
   if (sessionStorage.getItem(adminSessionKey) === "true") {
     showAdmin();
   } else {
@@ -47,13 +49,21 @@ if (logoutButton) {
 
 if (adminContent && loginScreen) {
   window.addEventListener("pagehide", () => {
-    sessionStorage.removeItem(adminSessionKey);
+    if (sessionStorage.getItem(adminNavigationKey) !== "true") {
+      sessionStorage.removeItem(adminSessionKey);
+    }
+    sessionStorage.removeItem(adminNavigationKey);
   });
 
   document.querySelectorAll("a[href]").forEach((link) => {
     link.addEventListener("click", () => {
       const destination = link.getAttribute("href");
       if (destination && !destination.startsWith("#")) {
+        const destinationPage = new URL(destination, window.location.href).pathname.split("/").pop();
+        if (destinationPage === "admin.html" || destinationPage === "gallery-admin.html") {
+          sessionStorage.setItem(adminNavigationKey, "true");
+          return;
+        }
         sessionStorage.removeItem(adminSessionKey);
       }
     });
@@ -122,6 +132,12 @@ const leadersPageList = document.querySelector("#leaders-page-list");
 const adminLeadersList = document.querySelector("#admin-leaders-list");
 const leaderForm = document.querySelector("#leader-form");
 const leaderStorageKey = "philadelphia-leaders";
+const galleryList = document.querySelector("#gallery-list");
+const galleryForm = document.querySelector("#gallery-form");
+const adminGalleryList = document.querySelector("#admin-gallery-list");
+const galleryCount = document.querySelector("#gallery-count");
+const galleryFormMessage = document.querySelector("#gallery-form-message");
+const galleryStorageKey = "philadelphia-gallery";
 const exportBackupButton = document.querySelector("#export-backup");
 const importBackupInput = document.querySelector("#import-backup");
 const backupMessage = document.querySelector("#backup-message");
@@ -194,6 +210,7 @@ const prepareUploadedImage = async (value) => {
 };
 
 const saveAdminRecord = (storageKey, record, messageElement, successMessage, render) => {
+  const previousValue = localStorage.getItem(storageKey);
   try {
     const records = JSON.parse(localStorage.getItem(storageKey) || "[]");
     if (!Array.isArray(records)) throw new Error("Сохранённые данные повреждены. Сначала скачайте резервную копию.");
@@ -202,13 +219,21 @@ const saveAdminRecord = (storageKey, record, messageElement, successMessage, ren
     const isStorageFull = error instanceof DOMException
       && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED");
     messageElement.textContent = isStorageFull
-      ? "Не удалось сохранить: в браузере закончилось место. Удалите старые события или лидеров либо освободите место и попробуйте снова."
+      ? "Не удалось сохранить: в браузере закончилось место. Удалите старые события, фотографии или лидеров либо освободите место и попробуйте снова."
       : `Не удалось сохранить: ${error instanceof Error ? error.message : "неизвестная ошибка браузера."}`;
     messageElement.classList.add("form-message-error");
     return false;
   }
 
-  render();
+  try {
+    render();
+  } catch (error) {
+    if (previousValue === null) localStorage.removeItem(storageKey);
+    else localStorage.setItem(storageKey, previousValue);
+    messageElement.textContent = `Не удалось отобразить сохранённую запись: ${error instanceof Error ? error.message : "неизвестная ошибка."}`;
+    messageElement.classList.add("form-message-error");
+    return false;
+  }
   messageElement.classList.remove("form-message-error");
   messageElement.textContent = successMessage;
   return true;
@@ -228,12 +253,28 @@ const normalizeBackupItems = (items, type) => {
   });
 };
 
+const normalizeGalleryBackupItems = (items) => {
+  if (items === undefined) return [];
+  if (!Array.isArray(items) || items.length > 500) throw new Error("Некорректные данные галереи.");
+  return items.map((photo) => {
+    if (!photo || typeof photo !== "object" || typeof photo.id !== "string" || typeof photo.createdAt !== "string") {
+      throw new Error("Некорректная запись галереи.");
+    }
+    if (photo.id.length > 200 || photo.createdAt.length > 50 || !isSafeImage(photo.image)) {
+      throw new Error("Некорректная фотография в резервной копии.");
+    }
+    if (Number.isNaN(Date.parse(photo.createdAt))) throw new Error("Некорректная дата фотографии в резервной копии.");
+    return { id: photo.id, createdAt: photo.createdAt, image: photo.image };
+  });
+};
+
 const createBackup = () => JSON.stringify({
   format: "philadelphia-site-backup",
   version: backupVersion,
   exportedAt: new Date().toISOString(),
   events: readEvents(),
   leaders: readLeaders(),
+  gallery: readGalleryPhotos(),
 }, null, 2);
 
 const downloadBackup = (automatic = false) => {
@@ -263,6 +304,45 @@ const readLeaders = () => {
     return Array.isArray(stored) ? stored : [];
   } catch {
     return [];
+  }
+};
+
+const readGalleryPhotos = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(galleryStorageKey) || "[]");
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+};
+
+const renderGallery = () => {
+  const photos = readGalleryPhotos().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  if (galleryList) {
+    galleryList.innerHTML = photos.length
+      ? photos.map((photo) => `<figure class="gallery-photo"><img src="${escapeHtml(photo.image)}" alt="Фотография из жизни церкви" loading="lazy" /></figure>`).join("")
+      : '<p class="gallery-empty">Пока в галерее нет фотографий.</p>';
+  }
+
+  if (adminGalleryList) {
+    const language = localStorage.getItem("philadelphia-language") || "ru";
+    const photoLabel = language === "nl" ? "foto's" : language === "en" ? "photos" : "фото";
+    if (galleryCount) galleryCount.textContent = `${photos.length} ${photoLabel}`;
+    adminGalleryList.innerHTML = photos.length
+      ? photos.map((photo) => {
+        const locale = language === "nl" ? "nl-BE" : language === "en" ? "en-GB" : "ru-RU";
+        const date = new Date(photo.createdAt).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
+        return `<article class="admin-event admin-gallery-photo"><img src="${escapeHtml(photo.image)}" alt="Предпросмотр фотографии" loading="lazy" /><div><strong>Фотография</strong><span><span>Добавлена</span> ${date}</span></div><button type="button" data-delete-gallery-photo="${escapeHtml(photo.id)}">Удалить</button></article>`;
+      }).join("")
+      : "<p>Пока нет добавленных фотографий.</p>";
+
+    adminGalleryList.querySelectorAll("[data-delete-gallery-photo]").forEach((button) => {
+      button.addEventListener("click", () => {
+        localStorage.setItem(galleryStorageKey, JSON.stringify(readGalleryPhotos().filter((photo) => photo.id !== button.dataset.deleteGalleryPhoto)));
+        renderGallery();
+      });
+    });
   }
 };
 
@@ -431,6 +511,32 @@ if (eventForm) {
   });
 }
 
+if (galleryForm && galleryFormMessage) {
+  galleryForm.addEventListener("submit", async (submitEvent) => {
+    submitEvent.preventDefault();
+    galleryFormMessage.classList.remove("form-message-error");
+    galleryFormMessage.textContent = "";
+
+    const fileInput = galleryForm.querySelector('input[type="file"]');
+    try {
+      const image = await prepareUploadedImage(fileInput?.files?.[0]);
+      if (!image) throw new Error("Выберите фотографию перед добавлением.");
+
+      const photo = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        createdAt: new Date().toISOString(),
+        image,
+      };
+      if (saveAdminRecord(galleryStorageKey, photo, galleryFormMessage, "Фотография добавлена в галерею.", renderGallery)) {
+        galleryForm.reset();
+      }
+    } catch (error) {
+      galleryFormMessage.classList.add("form-message-error");
+      galleryFormMessage.textContent = error instanceof Error ? error.message : "Не удалось добавить фотографию. Проверьте файл и попробуйте снова.";
+    }
+  });
+}
+
 if (exportBackupButton) exportBackupButton.addEventListener("click", () => downloadBackup());
 
 if (importBackupInput) {
@@ -449,12 +555,15 @@ if (importBackupInput) {
         if (backup.format !== "philadelphia-site-backup" || backup.version !== backupVersion) throw new Error("Файл создан в несовместимом формате.");
         const events = normalizeBackupItems(backup.events, "событий");
         const leaders = normalizeBackupItems(backup.leaders, "лидеров");
-        if (!window.confirm(`Заменить текущие данные?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
+        const gallery = normalizeGalleryBackupItems(backup.gallery);
+        if (!window.confirm(`Заменить текущие данные?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nФотографии галереи: ${gallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
         downloadBackup(true);
         localStorage.setItem(eventStorageKey, JSON.stringify(events));
         localStorage.setItem(leaderStorageKey, JSON.stringify(leaders));
+        localStorage.setItem(galleryStorageKey, JSON.stringify(gallery));
         renderEvents();
         renderLeaders();
+        renderGallery();
         if (backupMessage) backupMessage.textContent = "Данные успешно восстановлены.";
       } catch (error) {
         if (backupMessage) backupMessage.textContent = error instanceof Error ? error.message : "Не удалось импортировать файл.";
@@ -466,3 +575,4 @@ if (importBackupInput) {
 
 renderEvents();
 renderLeaders();
+renderGallery();

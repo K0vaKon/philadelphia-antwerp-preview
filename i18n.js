@@ -23,7 +23,19 @@ const translations = {
     "Новое событие": "Новое событие", "Опубликованные": "Опубликованные", "события.": "события.",
     "Опубликовать событие": "Опубликовать событие", "Выйти": "Выйти", "Войти": "Войти",
     "Пароль": "Пароль", "Название события": "Название события", "Дата": "Дата", "Время (24 часа)": "Время (24 часа)",
-    "Описание": "Описание", "Фото события": "Фото события", "Короткая категория": "Короткая категория"
+    "Описание": "Описание", "Фото события": "Фото события", "Короткая категория": "Короткая категория",
+    "Галерея": "Галерея", "Наша жизнь вместе": "Наша жизнь вместе", "моментов.": "моментов.",
+    "Встречи, служения и тёплые мгновения нашей церковной семьи.": "Встречи, служения и тёплые мгновения нашей церковной семьи.",
+    "Пока в галерее нет фотографий.": "Пока в галерее нет фотографий.", "Управление галереей": "Управление галереей",
+    "К событиям": "К событиям", "Открыть галерею": "Открыть галерею", "Добавить": "Добавить", "фото.": "фото.",
+    "Загружайте фотографии — новые будут появляться первыми в галерее.": "Загружайте фотографии — новые будут появляться первыми в галерее.",
+    "Новое фото": "Новое фото", "Выберите фотографию для галереи.": "Выберите фотографию для галереи.",
+    "Фотография": "Фотография", "Добавить фотографию": "Добавить фотографию", "Выберите фотографию": "Выберите фотографию",
+    "Добавлена": "Добавлена", "Удалить": "Удалить",
+    "Нажмите «Добавить фотографию»": "Нажмите «Добавить фотографию»", "Фото сразу появится в галерее": "Фото сразу появится в галерее",
+    "На этом статическом сайте фотографии сохраняются в браузере, где их загрузили.": "На этом статическом сайте фотографии сохраняются в браузере, где их загрузили.",
+    "Добавленные": "Добавленные", "фотографии.": "фотографии.", "0 фотографий": "0 фотографий",
+    "Закрытый раздел": "Закрытый раздел", "Введите пароль, чтобы управлять фотографиями галереи.": "Введите пароль, чтобы управлять фотографиями галереи."
   },
   nl: {
     "Лидеры служения": "Leiders van de bediening", "Посмотреть всех": "Bekijk iedereen", "Добавить лидера": "Leider toevoegen",
@@ -49,7 +61,18 @@ const translations = {
     "Опубликованные": "Gepubliceerde", "события.": "evenementen.", "Опубликовать событие": "Evenement publiceren",
     "Выйти": "Uitloggen", "Войти": "Inloggen", "Пароль": "Wachtwoord", "Название события": "Naam evenement",
     "Дата": "Datum", "Время (24 часа)": "Tijd (24 uur)", "Описание": "Beschrijving", "Фото события": "Foto evenement",
-    "Короткая категория": "Categorie"
+    "Короткая категория": "Categorie", "Галерея": "Galerij", "Наша жизнь вместе": "Ons leven samen",
+    "моментов.": "vol momenten.", "Встречи, служения и тёплые мгновения нашей церковной семьи.": "Samenkomsten, diensten en warme momenten van onze kerkfamilie.",
+    "Пока в галерее нет фотографий.": "Er staan nog geen foto's in de galerij.", "Управление галереей": "Galerij beheren",
+    "К событиям": "Naar evenementen", "Открыть галерею": "Galerij openen", "Добавить": "Foto", "фото.": "toevoegen.",
+    "Загружайте фотографии — новые будут появляться первыми в галерее.": "Upload foto's — de nieuwste verschijnen bovenaan in de galerij.",
+    "Новое фото": "Nieuwe foto", "Выберите фотографию для галереи.": "Kies een foto voor de galerij.",
+    "Фотография": "Foto", "Добавить фотографию": "Foto toevoegen", "Выберите фотографию": "Kies een foto",
+    "Добавлена": "Toegevoegd", "Удалить": "Verwijderen",
+    "Нажмите «Добавить фотографию»": "Klik op 'Foto toevoegen'", "Фото сразу появится в галерее": "De foto verschijnt meteen in de galerij",
+    "На этом статическом сайте фотографии сохраняются в браузере, где их загрузили.": "Op deze statische website worden foto's opgeslagen in de browser waarin ze zijn geüpload.",
+    "Добавленные": "Toegevoegde", "фотографии.": "foto's.", "0 фотографий": "0 foto's",
+    "Закрытый раздел": "Beveiligd gedeelte", "Введите пароль, чтобы управлять фотографиями галереи.": "Voer het wachtwoord in om de galerijfoto's te beheren."
   },
   en: {
     "Лидеры служения": "Ministry leaders", "Посмотреть всех": "View all", "Добавить лидера": "Add leader",
@@ -75,7 +98,18 @@ const translations = {
     "Опубликованные": "Published", "события.": "events.", "Опубликовать событие": "Publish event",
     "Выйти": "Log out", "Войти": "Log in", "Пароль": "Password", "Название события": "Event title",
     "Дата": "Date", "Время (24 часа)": "Time (24-hour)", "Описание": "Description", "Фото события": "Event photo",
-    "Короткая категория": "Short category"
+    "Короткая категория": "Short category", "Галерея": "Gallery", "Наша жизнь вместе": "Our life together",
+    "моментов.": "moments.", "Встречи, служения и тёплые мгновения нашей церковной семьи.": "Gatherings, services and warm moments from our church family.",
+    "Пока в галерее нет фотографий.": "There are no photos in the gallery yet.", "Управление галереей": "Manage gallery",
+    "К событиям": "To events", "Открыть галерею": "Open gallery", "Добавить": "Add", "фото.": "a photo.",
+    "Загружайте фотографии — новые будут появляться первыми в галерее.": "Upload photos — the newest ones will appear first in the gallery.",
+    "Новое фото": "New photo", "Выберите фотографию для галереи.": "Choose a photo for the gallery.",
+    "Фотография": "Photo", "Добавить фотографию": "Add photo", "Выберите фотографию": "Choose a photo",
+    "Добавлена": "Added", "Удалить": "Delete",
+    "Нажмите «Добавить фотографию»": "Click “Add photo”", "Фото сразу появится в галерее": "The photo will appear in the gallery right away",
+    "На этом статическом сайте фотографии сохраняются в браузере, где их загрузили.": "On this static website, photos are saved in the browser where they were uploaded.",
+    "Добавленные": "Added", "фотографии.": "photos.", "0 фотографий": "0 photos",
+    "Закрытый раздел": "Private section", "Введите пароль, чтобы управлять фотографиями галереи.": "Enter the password to manage gallery photos."
   }
 };
 
@@ -115,9 +149,9 @@ const translateTextNodes = (language) => {
   });
   document.documentElement.lang = language;
   const titles = {
-    ru: { "index.html": "Филадельфия — церковь в Антверпене", "about.html": "О нас — Филадельфия", "leaders.html": "Служения — Филадельфия", "admin.html": "Админка событий — Филадельфия" },
-    nl: { "index.html": "Philadelphia — kerk in Antwerpen", "about.html": "Over ons — Philadelphia", "leaders.html": "Bedieningen — Philadelphia", "admin.html": "Evenementenbeheer — Philadelphia" },
-    en: { "index.html": "Philadelphia — church in Antwerp", "about.html": "About us — Philadelphia", "leaders.html": "Ministries — Philadelphia", "admin.html": "Event admin — Philadelphia" }
+    ru: { "index.html": "Филадельфия — церковь в Антверпене", "about.html": "О нас — Филадельфия", "leaders.html": "Служения — Филадельфия", "gallery.html": "Галерея — Филадельфия", "admin.html": "Админка событий — Филадельфия", "gallery-admin.html": "Управление галереей — Филадельфия" },
+    nl: { "index.html": "Philadelphia — kerk in Antwerpen", "about.html": "Over ons — Philadelphia", "leaders.html": "Bedieningen — Philadelphia", "gallery.html": "Galerij — Philadelphia", "admin.html": "Evenementenbeheer — Philadelphia", "gallery-admin.html": "Galerijbeheer — Philadelphia" },
+    en: { "index.html": "Philadelphia — church in Antwerp", "about.html": "About us — Philadelphia", "leaders.html": "Ministries — Philadelphia", "gallery.html": "Gallery — Philadelphia", "admin.html": "Event admin — Philadelphia", "gallery-admin.html": "Gallery admin — Philadelphia" }
   };
   const page = location.pathname.split("/").pop() || "index.html";
   if (titles[language]?.[page]) document.title = titles[language][page];
