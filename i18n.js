@@ -1,6 +1,21 @@
 const translations = {
   ru: {
-    "Лидеры служения": "Лидеры служения", "Посмотреть всех": "Посмотреть всех", "Добавить лидера": "Добавить лидера",
+    "Малые группы": "Малые группы", "Домашние группы": "Домашние группы", "Все группы": "Все группы",
+    "Пресвитеры": "Пресвитеры", "Резервная копия": "Резервная копия",
+    "Управление": "Управление", "сайтом.": "сайтом.",
+    "Выберите раздел — его форма и список записей будут собраны вместе.": "Выберите раздел — его форма и список записей будут собраны вместе.",
+    "Домашние": "Домашние", "группы.": "группы.",
+    "Пасторская команда": "Пасторская команда", "Наши": "Наши", "пресвитеры.": "пресвитеры.",
+    "Добавить домашнюю группу": "Добавить домашнюю группу", "Добавить пресвитера": "Добавить пресвитера", "Фото": "Фото",
+    "Новая группа": "Новая группа", "Пресвитер": "Пресвитер", "Домашняя группа": "Домашняя группа",
+    "Добавить домашнюю группу ↗": "Добавить домашнюю группу ↗", "Добавить пресвитера ↗": "Добавить пресвитера ↗",
+    "Новая группа появится в списке на странице служений.": "Новая группа появится в списке на странице служений.",
+    "Пресвитер появится в отдельном списке на странице служений.": "Пресвитер появится в отдельном списке на странице служений.",
+    "Название": "Название", "Категория": "Категория", "Имя и фамилия": "Имя и фамилия", "Район или категория": "Район или категория",
+    "Кратко расскажите о служении": "Кратко расскажите о служении", "Расскажите о группе": "Расскажите о группе",
+    "Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.": "Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.",
+    "Лидеры служения": "Лидеры служения", "лидеры служения.": "лидеры служения.",
+    "домашние группы.": "домашние группы.", "Посмотреть всех": "Посмотреть всех", "Добавить лидера": "Добавить лидера",
     "Вера • Надежда • Любовь": "Вера • Надежда • Любовь", "Место, где можно": "Место, где можно", "быть собой.": "быть собой.",
     "Я хочу прийти": "Я хочу прийти", "Новая жизнь начинается здесь": "Новая жизнь начинается здесь",
     "Церковь Филадельфия — это открытое сообщество, где каждый может найти духовную поддержку, изучение Слова Божьего и искреннее общение в духе Христовой любви.": "Церковь Филадельфия — это открытое сообщество, где каждый может найти духовную поддержку, изучение Слова Божьего и искреннее общение в духе Христовой любви.",
@@ -39,9 +54,23 @@ const translations = {
     "Показать ещё фотографии": "Показать ещё фотографии", "Переводы на другие языки": "Переводы на другие языки",
     "Если перевод не заполнен, посетители увидят исходный текст.": "Если перевод не заполнен, посетители увидят исходный текст.",
     "Редактировать переводы": "Редактировать переводы", "Сохранить переводы": "Сохранить переводы",
-    "Переводы сохранены.": "Переводы сохранены.", "Название": "Название", "Категория": "Категория"
+    "Переводы сохранены.": "Переводы сохранены."
   },
   nl: {
+    "Малые группы": "Kleine groepen", "Домашние группы": "Huiskringen", "Все группы": "Alle groepen",
+    "Пресвитеры": "Ouderlingen", "Резервная копия": "Back-up",
+    "Управление": "Beheer", "сайтом.": "de website.",
+    "Выберите раздел — его форма и список записей будут собраны вместе.": "Kies een onderdeel; het formulier en de bijbehorende items staan samen op één scherm.",
+    "Домашние": "Huis", "группы.": "kringen.",
+    "Пасторская команда": "Pastoraal team", "Наши": "Onze", "пресвитеры.": "ouderlingen.",
+    "Добавить домашнюю группу": "Huiskring toevoegen", "Добавить пресвитера": "Ouderling toevoegen", "Фото": "Foto",
+    "Новая группа": "Nieuwe groep", "Пресвитер": "Ouderling", "Домашняя группа": "Huiskring",
+    "Добавить домашнюю группу ↗": "Huiskring toevoegen ↗", "Добавить пресвитера ↗": "Ouderling toevoegen ↗",
+    "Новая группа появится в списке на странице служений.": "De nieuwe huiskring verschijnt op de bedieningenpagina.",
+    "Пресвитер появится в отдельном списке на странице служений.": "De ouderling verschijnt in een aparte lijst op de bedieningenpagina.",
+    "Название": "Naam", "Категория": "Categorie", "Имя и фамилия": "Voor- en achternaam", "Район или категория": "Buurt of categorie",
+    "Кратко расскажите о служении": "Vertel kort over de bediening", "Расскажите о группе": "Vertel over de groep",
+    "Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.": "Download evenementen, leiders, huiskringen, ouderlingen en galerijfoto's in één bestand. Bewaar het om later te importeren.",
     "Лидеры служения": "Leiders van de bediening", "Посмотреть всех": "Bekijk iedereen", "Добавить лидера": "Leider toevoegen",
     "Вера • Надежда • Любовь": "Geloof • Hoop • Liefde", "Место, где можно": "Een plek waar je", "быть собой.": "jezelf kunt zijn.",
     "Я хочу прийти": "Ik wil komen", "Новая жизнь начинается здесь": "Nieuw leven begint hier",
@@ -62,7 +91,9 @@ const translations = {
     "Последние": "Laatste", "видео.": "video's.", "Открыть канал": "Kanaal openen",
     "Наши лидеры": "Ons team", "На сайт": "Naar de website", "Панель управления": "Beheerpaneel",
     "Создать": "Een", "событие.": "evenement maken.", "Новое событие": "Nieuw evenement",
-    "Опубликованные": "Gepubliceerde", "события.": "evenementen.", "Опубликовать событие": "Evenement publiceren",
+    "Опубликованные": "Gepubliceerde", "события.": "evenementen.",
+    "домашние группы.": "huiskringen.", "лидеры служения.": "leiders van de bediening.",
+    "Опубликовать событие": "Evenement publiceren",
     "Выйти": "Uitloggen", "Войти": "Inloggen", "Пароль": "Wachtwoord", "Название события": "Naam evenement",
     "Дата": "Datum", "Время (24 часа)": "Tijd (24 uur)", "Описание": "Beschrijving", "Фото события": "Foto evenement",
     "Короткая категория": "Categorie", "Галерея": "Galerij", "Наша жизнь вместе": "Ons leven samen",
@@ -80,9 +111,23 @@ const translations = {
     "Показать ещё фотографии": "Meer foto's tonen", "Переводы на другие языки": "Vertalingen naar andere talen",
     "Если перевод не заполнен, посетители увидят исходный текст.": "Als er geen vertaling is ingevuld, zien bezoekers de oorspronkelijke tekst.",
     "Редактировать переводы": "Vertalingen bewerken", "Сохранить переводы": "Vertalingen opslaan",
-    "Переводы сохранены.": "Vertalingen opgeslagen.", "Название": "Titel", "Категория": "Categorie"
+    "Переводы сохранены.": "Vertalingen opgeslagen."
   },
   en: {
+    "Малые группы": "Small groups", "Домашние группы": "Home groups", "Все группы": "All groups",
+    "Пресвитеры": "Presbyters", "Резервная копия": "Backup",
+    "Управление": "Manage", "сайтом.": "the website.",
+    "Выберите раздел — его форма и список записей будут собраны вместе.": "Choose a section to see its form and existing entries together.",
+    "Домашние": "Home", "группы.": "groups.",
+    "Пасторская команда": "Pastoral team", "Наши": "Our", "пресвитеры.": "presbyters.",
+    "Добавить домашнюю группу": "Add a home group", "Добавить пресвитера": "Add a presbyter", "Фото": "Photo",
+    "Новая группа": "New group", "Пресвитер": "Presbyter", "Домашняя группа": "Home group",
+    "Добавить домашнюю группу ↗": "Add home group ↗", "Добавить пресвитера ↗": "Add presbyter ↗",
+    "Новая группа появится в списке на странице служений.": "The new group will appear on the ministries page.",
+    "Пресвитер появится в отдельном списке на странице служений.": "The presbyter will appear in a separate list on the ministries page.",
+    "Название": "Name", "Категория": "Category", "Имя и фамилия": "Full name", "Район или категория": "Area or category",
+    "Кратко расскажите о служении": "Briefly describe the ministry", "Расскажите о группе": "Describe the group",
+    "Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.": "Download events, leaders, home groups, presbyters, and gallery photos in one file. Save it to import later.",
     "Лидеры служения": "Ministry leaders", "Посмотреть всех": "View all", "Добавить лидера": "Add leader",
     "Вера • Надежда • Любовь": "Faith • Hope • Love", "Место, где можно": "A place where you can", "быть собой.": "be yourself.",
     "Я хочу прийти": "I want to come", "Новая жизнь начинается здесь": "New life starts here",
@@ -103,7 +148,9 @@ const translations = {
     "Последние": "Latest", "видео.": "videos.", "Открыть канал": "Open channel",
     "Наши лидеры": "Our team", "На сайт": "Back to website", "Панель управления": "Admin panel",
     "Создать": "Create", "событие.": "an event.", "Новое событие": "New event",
-    "Опубликованные": "Published", "события.": "events.", "Опубликовать событие": "Publish event",
+    "Опубликованные": "Published", "события.": "events.",
+    "домашние группы.": "home groups.", "лидеры служения.": "ministry leaders.",
+    "Опубликовать событие": "Publish event",
     "Выйти": "Log out", "Войти": "Log in", "Пароль": "Password", "Название события": "Event title",
     "Дата": "Date", "Время (24 часа)": "Time (24-hour)", "Описание": "Description", "Фото события": "Event photo",
     "Короткая категория": "Short category", "Галерея": "Gallery", "Наша жизнь вместе": "Our life together",
@@ -121,7 +168,7 @@ const translations = {
     "Показать ещё фотографии": "Show more photos", "Переводы на другие языки": "Translations into other languages",
     "Если перевод не заполнен, посетители увидят исходный текст.": "If a translation is left blank, visitors will see the original text.",
     "Редактировать переводы": "Edit translations", "Сохранить переводы": "Save translations",
-    "Переводы сохранены.": "Translations saved.", "Название": "Title", "Категория": "Category"
+    "Переводы сохранены.": "Translations saved."
   }
 };
 
@@ -155,6 +202,11 @@ const translateTextNodes = (language) => {
       "Например, Вечер хвалы": { nl: "Bijvoorbeeld: Avond van aanbidding", en: "For example: Worship evening" },
       "Праздник, собрание, молодёжь": { nl: "Feest, samenkomst, jongeren", en: "Celebration, gathering, youth" },
       "Расскажите, что будет на событии": { nl: "Vertel wat er tijdens het evenement gebeurt", en: "Describe what will happen at the event" },
+      "Например, Домашняя группа Hoboken": { nl: "Bijvoorbeeld: Huiskring Hoboken", en: "For example: Hoboken home group" },
+      "Например, Hoboken": { nl: "Bijvoorbeeld: Hoboken", en: "For example: Hoboken" },
+      "Например, Иван Иванов": { nl: "Bijvoorbeeld: Jan Janssen", en: "For example: John Smith" },
+      "Расскажите о группе": { nl: "Vertel over de groep", en: "Describe the group" },
+      "Кратко расскажите о служении": { nl: "Vertel kort over de bediening", en: "Briefly describe the ministry" },
       "Введите пароль": { nl: "Voer wachtwoord in", en: "Enter password" }
     };
     if (placeholderTranslations[placeholder]?.[language]) input.placeholder = placeholderTranslations[placeholder][language];

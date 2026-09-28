@@ -533,12 +533,6 @@
     font-size: 12px;
   }
 
-  .admin-events > #admin-events-list {
-    background: #fff;
-    box-shadow: 0 12px 40px rgba(20, 43, 74, .05);
-    padding: 0 24px;
-  }
-
   .admin-event {
     align-items: center;
     border-bottom: 1px solid #d9e1eb;
@@ -657,6 +651,51 @@
 
 .beliefs .beliefs-heading .eyebrow {
   color: #b08213;
+}
+
+.community-directory {
+  background: #eaf0f7;
+}
+
+.community-directory-alt {
+  background: #fff;
+}
+
+.horizontal-people-list {
+  display: grid;
+  gap: 22px;
+  grid-auto-columns: minmax(260px, 31%);
+  grid-auto-flow: column;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 0 0 18px;
+  scroll-snap-type: x mandatory;
+  scrollbar-color: #b7c5d6 transparent;
+  scrollbar-width: thin;
+}
+
+.horizontal-people-list > .leader-card,
+.horizontal-people-list > .leader-preview-card {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.directory-empty {
+  color: #64738a;
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.admin-directory {
+  border-top: 1px solid #d9e1eb;
+  padding-top: 20px;
+}
+
+@media (max-width: 800px) {
+  .horizontal-people-list {
+    gap: 14px;
+    grid-auto-columns: minmax(230px, 78%);
+  }
 }
 
 .beliefs .beliefs-heading h2 {

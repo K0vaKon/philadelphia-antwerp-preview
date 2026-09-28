@@ -7,11 +7,66 @@ const logoutButton = document.querySelector("#logout-button");
 const adminSessionKey = "philadelphia-admin-auth";
 const adminNavigationKey = "philadelphia-admin-navigation";
 const adminPassword = "admin";
+const adminTabs = document.querySelector("[data-admin-tabs]");
+const adminTabStorageKey = "philadelphia-admin-active-tab";
+
+if (adminTabs) {
+  const tabs = [...adminTabs.querySelectorAll("[data-admin-tab]")];
+  const panels = [...document.querySelectorAll("[data-admin-panel]")];
+  const activateTab = (tab, focus = false, scrollToPanel = false) => {
+    const panelId = tab.dataset.adminTab;
+    const selectedPanel = panels.find((panel) => panel.id === panelId);
+    if (!selectedPanel) {
+      throw new Error(`Не найден раздел админки: ${panelId}`);
+    }
+
+    tabs.forEach((item) => {
+      const isActive = item === tab;
+      item.setAttribute("aria-selected", String(isActive));
+      item.tabIndex = isActive ? 0 : -1;
+    });
+    panels.forEach((panel) => { panel.hidden = panel.id !== panelId; });
+    sessionStorage.setItem(adminTabStorageKey, panelId);
+    if (focus) tab.focus();
+    if (scrollToPanel) {
+      const panelTop = selectedPanel.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: Math.max(0, panelTop - adminTabs.offsetHeight - 16), behavior: "instant" });
+    }
+  };
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => activateTab(tab, false, true));
+    tab.addEventListener("keydown", (event) => {
+      let nextIndex;
+      if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+      else if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === "Home") nextIndex = 0;
+      else if (event.key === "End") nextIndex = tabs.length - 1;
+      if (nextIndex !== undefined) {
+        event.preventDefault();
+        activateTab(tabs[nextIndex], true, true);
+      }
+    });
+  });
+
+  const savedPanelId = sessionStorage.getItem(adminTabStorageKey);
+  const initialTab = tabs.find((tab) => tab.dataset.adminTab === savedPanelId) || tabs.find((tab) => tab.getAttribute("aria-selected") === "true");
+  if (initialTab) activateTab(initialTab);
+}
 
 const showAdmin = () => {
   if (adminContent) adminContent.hidden = false;
   if (loginScreen) loginScreen.hidden = true;
   if (logoutButton) logoutButton.hidden = false;
+};
+
+const readRecords = (storageKey) => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
 };
 
 if (adminContent && loginScreen) {
@@ -127,11 +182,19 @@ const eventsList = document.querySelector("#events-list");
 const adminEventsList = document.querySelector("#admin-events-list");
 const eventForm = document.querySelector("#event-form");
 const eventStorageKey = "philadelphia-events";
-const leadersList = document.querySelector("#leaders-list");
 const leadersPageList = document.querySelector("#leaders-page-list");
 const adminLeadersList = document.querySelector("#admin-leaders-list");
 const leaderForm = document.querySelector("#leader-form");
 const leaderStorageKey = "philadelphia-leaders";
+const homeGroupsList = document.querySelector("#home-groups-list");
+const homeGroupsPreviewList = document.querySelector("#home-groups-preview");
+const adminHomeGroupsList = document.querySelector("#admin-home-groups-list");
+const homeGroupForm = document.querySelector("#home-group-form");
+const homeGroupStorageKey = "philadelphia-home-groups";
+const presbytersList = document.querySelector("#presbyters-list");
+const adminPresbytersList = document.querySelector("#admin-presbyters-list");
+const presbyterForm = document.querySelector("#presbyter-form");
+const presbyterStorageKey = "philadelphia-presbyters";
 const galleryList = document.querySelector("#gallery-list");
 const galleryForm = document.querySelector("#gallery-form");
 const adminGalleryList = document.querySelector("#admin-gallery-list");
@@ -273,12 +336,19 @@ const normalizeGalleryBackupItems = (items) => {
   });
 };
 
+const normalizeDirectoryBackupItems = (items, type, storageKey) => {
+  if (items === undefined) return readRecords(storageKey);
+  return normalizeBackupItems(items, type);
+};
+
 const createBackup = () => JSON.stringify({
   format: "philadelphia-site-backup",
   version: backupVersion,
   exportedAt: new Date().toISOString(),
   events: readEvents(),
   leaders: readLeaders(),
+  homeGroups: readRecords(homeGroupStorageKey),
+  presbyters: readRecords(presbyterStorageKey),
   gallery: readGalleryPhotos(),
 }, null, 2);
 
@@ -410,6 +480,8 @@ const getDynamicLabel = (key) => {
   const language = getCurrentLanguage();
   const labels = {
     service: { ru: "Служение", nl: "Bediening", en: "Ministry" },
+    homeGroup: { ru: "Домашняя группа", nl: "Huiskring", en: "Home group" },
+    presbyter: { ru: "Пресвитер", nl: "Ouderling", en: "Presbyter" },
     event: { ru: "Событие", nl: "Evenement", en: "Event" },
     remove: { ru: "Удалить", nl: "Verwijderen", en: "Delete" },
     editRecord: { ru: "Редактировать", nl: "Bewerken", en: "Edit" },
@@ -423,11 +495,39 @@ const getDynamicLabel = (key) => {
     time: { ru: "Время", nl: "Tijd", en: "Time" },
     image: { ru: "Фотография", nl: "Foto", en: "Photo" },
     noLeaders: { ru: "Пока нет добавленных лидеров служения.", nl: "Er zijn nog geen bedieningsleiders toegevoegd.", en: "No ministry leaders have been added yet." },
-    noAdminLeaders: { ru: "Пока нет созданных лидеров.", nl: "Er zijn nog geen leiders toegevoegd.", en: "No leaders have been added yet." },
-    noAdminEvents: { ru: "Пока нет созданных событий.", nl: "Er zijn nog geen evenementen toegevoegd.", en: "No events have been added yet." },
+    noAdminRecords: { ru: "Пока нет записей.", nl: "Er zijn nog geen items.", en: "There are no entries yet." },
+    noHomeGroups: { ru: "Домашние группы пока не добавлены.", nl: "Er zijn nog geen huiskringen toegevoegd.", en: "No home groups have been added yet." },
+    noPresbyters: { ru: "Пресвитеры пока не добавлены.", nl: "Er zijn nog geen ouderlingen toegevoegd.", en: "No presbyters have been added yet." },
+    createRecordError: { ru: "Не удалось добавить запись.", nl: "De invoer kon niet worden toegevoegd.", en: "Could not add the entry." },
+    homeGroupAdded: { ru: "Домашняя группа добавлена.", nl: "Huiskring toegevoegd.", en: "Home group added." },
+    presbyterAdded: { ru: "Пресвитер добавлен.", nl: "Ouderling toegevoegd.", en: "Presbyter added." },
     noEvents: { ru: "Сейчас нет событий ближайшие 3 месяца.", nl: "Er zijn de komende 3 maanden geen evenementen.", en: "There are no events in the next 3 months." },
   };
   return labels[key]?.[language] || "";
+};
+
+const formatAdminRecordCount = (count, type) => {
+  const language = getCurrentLanguage();
+  const labels = {
+    event: { ru: ["событие", "события", "событий"], nl: "evenementen", en: ["event", "events"] },
+    homeGroup: { ru: ["домашняя группа", "домашние группы", "домашних групп"], nl: "huiskringen", en: ["home group", "home groups"] },
+    presbyter: { ru: ["пресвитер", "пресвитера", "пресвитеров"], nl: "ouderlingen", en: ["presbyter", "presbyters"] },
+    leader: { ru: ["лидер", "лидера", "лидеров"], nl: "leiders", en: ["leader", "leaders"] },
+  };
+  const names = labels[type];
+  if (language === "ru") {
+    const remainder100 = count % 100;
+    const remainder10 = count % 10;
+    const form = remainder100 >= 11 && remainder100 <= 14 ? 2 : remainder10 === 1 ? 0 : remainder10 >= 2 && remainder10 <= 4 ? 1 : 2;
+    return `${count} ${names.ru[form]}`;
+  }
+  const name = language === "nl" ? names.nl : names.en[count === 1 ? 0 : 1];
+  return `${count} ${name}`;
+};
+
+const updateAdminRecordCount = (container, count, type) => {
+  const countElement = container?.closest(".admin-records")?.querySelector(".events-count");
+  if (countElement) countElement.textContent = formatAdminRecordCount(count, type);
 };
 
 const createRecordTranslations = (formData) => Object.fromEntries(contentLanguages.map((language) => {
@@ -507,30 +607,57 @@ const bindRecordEditors = (container, storageKey, type, render) => {
   });
 };
 
-const leaderCardMarkup = (leader, compact = false) => {
+const leaderCardMarkup = (leader, compact = false, fallbackLabel = "service") => {
   const cardClass = compact ? "leader-preview-card" : "leader-card";
   const photoClass = compact ? "leader-preview-photo" : "leader-photo";
   const infoClass = compact ? "leader-preview-info" : "leader-info";
-  return `<article class="${cardClass}"><div class="${photoClass}" style="background-image:url('${escapeHtml(leader.image)}')"></div><div class="${infoClass}"><div><p>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel("service"))}</p><h3>${escapeHtml(getLocalizedRecordField(leader, "title"))}</h3>${compact ? `<a href="leaders.html">Подробнее <span>→</span></a>` : `<small>${escapeHtml(getLocalizedRecordField(leader, "description"))}</small>`}</div>${compact ? "" : "<span>↗</span>"}</div></article>`;
+  const destination = fallbackLabel === "homeGroup" ? "leaders.html#home-groups" : "leaders.html";
+  return `<article class="${cardClass}"><div class="${photoClass}" style="background-image:url('${escapeHtml(leader.image)}')"></div><div class="${infoClass}"><div><p>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel(fallbackLabel))}</p><h3>${escapeHtml(getLocalizedRecordField(leader, "title"))}</h3>${compact ? `<a href="${destination}">Подробнее <span>→</span></a>` : `<small>${escapeHtml(getLocalizedRecordField(leader, "description"))}</small>`}</div>${compact ? "" : "<span>↗</span>"}</div></article>`;
+};
+
+const renderDirectory = (records, list, emptyLabel, type, compact = false) => {
+  if (!list) return;
+  list.innerHTML = records.length
+    ? records.map((record) => leaderCardMarkup(record, compact, type)).join("")
+    : `<p class="directory-empty">${getDynamicLabel(emptyLabel)}</p>`;
+};
+
+const renderAdminDirectory = (records, container, storageKey, type, render) => {
+  if (!container) return;
+  updateAdminRecordCount(container, records.length, type);
+  container.innerHTML = records.length
+    ? records.map((record) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(record, "title"))}</strong><span>${escapeHtml(getLocalizedRecordField(record, "tag") || getDynamicLabel(type))}</span></div><button type="button" data-delete-record="${escapeHtml(record.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(record, type)}</article>`).join("")
+    : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
+  bindRecordEditors(container, storageKey, type, render);
+  container.querySelectorAll("[data-delete-record]").forEach((button) => {
+    button.addEventListener("click", () => {
+      localStorage.setItem(storageKey, JSON.stringify(readRecords(storageKey).filter((record) => record.id !== button.dataset.deleteRecord)));
+      render();
+    });
+  });
+};
+
+const renderHomeGroups = () => {
+  const records = readRecords(homeGroupStorageKey);
+  renderDirectory(records, homeGroupsList, "noHomeGroups", "homeGroup");
+  renderDirectory(records, homeGroupsPreviewList, "noHomeGroups", "homeGroup", true);
+  renderAdminDirectory(records, adminHomeGroupsList, homeGroupStorageKey, "homeGroup", renderHomeGroups);
+};
+
+const renderPresbyters = () => {
+  const records = readRecords(presbyterStorageKey);
+  renderDirectory(records, presbytersList, "noPresbyters", "presbyter");
+  renderAdminDirectory(records, adminPresbytersList, presbyterStorageKey, "presbyter", renderPresbyters);
 };
 
 const renderLeaders = () => {
   const leaders = readLeaders();
-  if (leadersList) {
-    leadersList.innerHTML = leaders.length ? leaders.slice(0, 3).map((leader) => leaderCardMarkup(leader, true)).join("") : `<div class="leader-empty">${getDynamicLabel("noLeaders")}</div>`;
-  }
   if (leadersPageList) {
     leadersPageList.innerHTML = leaders.length ? leaders.map((leader) => leaderCardMarkup(leader)).join("") : `<div class="leader-empty">${getDynamicLabel("noLeaders")}</div>`;
   }
   if (adminLeadersList) {
-    const count = document.querySelector("#leaders-count");
-    const language = getCurrentLanguage();
-    if (count) count.textContent = language === "nl"
-      ? `${leaders.length} leiders`
-      : language === "en"
-        ? `${leaders.length} ${leaders.length === 1 ? "leader" : "leaders"}`
-        : `${leaders.length} ${leaders.length === 1 ? "лидер" : "лидеров"}`;
-    adminLeadersList.innerHTML = leaders.length ? leaders.map((leader) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(leader, "title"))}</strong><span>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel("service"))}</span></div><button type="button" data-delete-leader="${escapeHtml(leader.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(leader, "leader")}</article>`).join("") : `<p>${getDynamicLabel("noAdminLeaders")}</p>`;
+    updateAdminRecordCount(adminLeadersList, leaders.length, "leader");
+    adminLeadersList.innerHTML = leaders.length ? leaders.map((leader) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(leader, "title"))}</strong><span>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel("service"))}</span></div><button type="button" data-delete-leader="${escapeHtml(leader.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(leader, "leader")}</article>`).join("") : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
     bindRecordEditors(adminLeadersList, leaderStorageKey, "leader", renderLeaders);
     adminLeadersList.querySelectorAll("[data-delete-leader]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -605,16 +732,10 @@ const renderEvents = () => {
 
   if (adminEventsList) {
     const allEvents = readEvents().sort(compareEventsByDate);
-    const count = document.querySelector("#events-count");
-    const language = getCurrentLanguage();
-    if (count) count.textContent = language === "nl"
-      ? `${allEvents.length} evenementen`
-      : language === "en"
-        ? `${allEvents.length} ${allEvents.length === 1 ? "event" : "events"}`
-        : `${allEvents.length} ${allEvents.length === 1 ? "событие" : "событий"}`;
+    updateAdminRecordCount(adminEventsList, allEvents.length, "event");
     adminEventsList.innerHTML = allEvents.length
       ? allEvents.map((event) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(event, "title"))}</strong><span>${escapeHtml(event.date)} · ${escapeHtml(formatEventTime(event.time))}</span></div><button type="button" data-delete-event="${escapeHtml(event.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(event, "event")}</article>`).join("")
-      : `<p>${getDynamicLabel("noAdminEvents")}</p>`;
+      : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
 
     bindRecordEditors(adminEventsList, eventStorageKey, "event", renderEvents);
     adminEventsList.querySelectorAll("[data-delete-event]").forEach((button) => {
@@ -655,6 +776,39 @@ if (leaderForm) {
     }
   });
 }
+
+const bindDirectoryForm = (form, storageKey, messageId, render, type) => {
+  if (!form) return;
+  form.addEventListener("submit", async (submitEvent) => {
+    submitEvent.preventDefault();
+    const message = document.querySelector(`#${messageId}`);
+    if (!(message instanceof HTMLElement)) return;
+    message.classList.remove("form-message-error");
+    message.textContent = "";
+
+    const formData = new FormData(form);
+    try {
+      const image = await prepareUploadedImage(formData.get("image"));
+      const record = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        title: String(formData.get("title") || "").trim(),
+        tag: String(formData.get("tag") || "").trim(),
+        description: String(formData.get("description") || "").trim(),
+        translations: createRecordTranslations(formData),
+        image: image || "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
+      };
+      if (!record.title || !record.description) throw new Error("Заполните название и описание.");
+      const successMessage = type === "homeGroup" ? getDynamicLabel("homeGroupAdded") : getDynamicLabel("presbyterAdded");
+      if (saveAdminRecord(storageKey, record, message, successMessage, render)) form.reset();
+    } catch (error) {
+      message.classList.add("form-message-error");
+      message.textContent = error instanceof Error ? error.message : `${getDynamicLabel("createRecordError")} ${getDynamicLabel(type)}.`;
+    }
+  });
+};
+
+bindDirectoryForm(homeGroupForm, homeGroupStorageKey, "home-group-form-message", renderHomeGroups, "homeGroup");
+bindDirectoryForm(presbyterForm, presbyterStorageKey, "presbyter-form-message", renderPresbyters, "presbyter");
 
 if (eventForm) {
   eventForm.addEventListener("submit", async (submitEvent) => {
@@ -731,14 +885,20 @@ if (importBackupInput) {
         if (backup.format !== "philadelphia-site-backup" || backup.version !== backupVersion) throw new Error("Файл создан в несовместимом формате.");
         const events = normalizeBackupItems(backup.events, "событий");
         const leaders = normalizeBackupItems(backup.leaders, "лидеров");
+        const homeGroups = normalizeDirectoryBackupItems(backup.homeGroups, "домашних групп", homeGroupStorageKey);
+        const presbyters = normalizeDirectoryBackupItems(backup.presbyters, "пресвитеров", presbyterStorageKey);
         const gallery = normalizeGalleryBackupItems(backup.gallery);
-        if (!window.confirm(`Заменить текущие данные?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nФотографии галереи: ${gallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
+        if (!window.confirm(`Заменить текущие данные?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФотографии галереи: ${gallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
         downloadBackup(true);
         localStorage.setItem(eventStorageKey, JSON.stringify(events));
         localStorage.setItem(leaderStorageKey, JSON.stringify(leaders));
+        localStorage.setItem(homeGroupStorageKey, JSON.stringify(homeGroups));
+        localStorage.setItem(presbyterStorageKey, JSON.stringify(presbyters));
         localStorage.setItem(galleryStorageKey, JSON.stringify(gallery));
         renderEvents();
         renderLeaders();
+        renderHomeGroups();
+        renderPresbyters();
         renderGallery();
         if (backupMessage) backupMessage.textContent = "Данные успешно восстановлены.";
       } catch (error) {
@@ -751,4 +911,6 @@ if (importBackupInput) {
 
 renderEvents();
 renderLeaders();
+renderHomeGroups();
+renderPresbyters();
 renderGallery();
