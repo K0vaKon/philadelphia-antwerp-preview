@@ -22,6 +22,7 @@
 .gallery-photo img {
   background: #eaf0f7;
   display: block;
+  cursor: zoom-in;
   height: auto;
   -webkit-touch-callout: none;
   -webkit-user-drag: none;
@@ -120,6 +121,59 @@
   opacity: 0;
   position: fixed;
   width: 1px;
+}
+
+.gallery-lightbox {
+  align-items: center;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, .32);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 10000;
+}
+
+.gallery-lightbox[hidden] {
+  display: none;
+}
+
+.has-gallery-lightbox {
+  overflow: hidden;
+}
+
+.gallery-lightbox-image {
+  max-height: 94vh;
+  max-height: 94dvh;
+  max-width: 96vw;
+  object-fit: contain;
+}
+
+.gallery-lightbox-close {
+  align-items: center;
+  background: #f3c94f;
+  border: 0;
+  border-radius: 50%;
+  color: #142b4a;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 30px;
+  height: 48px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  top: max(16px, env(safe-area-inset-top));
+  width: 48px;
+}
+
+.gallery-lightbox-close:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
 }
 
 .gallery-load-more {

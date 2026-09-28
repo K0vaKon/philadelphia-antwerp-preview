@@ -530,6 +530,8 @@ const getDynamicLabel = (key) => {
     photoDownloadFailed: { ru: "Не удалось скачать фото.", nl: "De foto kon niet worden gedownload.", en: "Could not download the photo." },
     photoShareFailed: { ru: "Не удалось поделиться фото.", nl: "De foto kon niet worden gedeeld.", en: "Could not share the photo." },
     photoShareTitle: { ru: "Фото церкви Филадельфия", nl: "Foto van Philadelphia-kerk", en: "Philadelphia Church photo" },
+    photoPreview: { ru: "Просмотр фотографии", nl: "Foto bekijken", en: "Photo preview" },
+    closePhotoPreview: { ru: "Закрыть просмотр фото", nl: "Fotovoorbeeld sluiten", en: "Close photo preview" },
     editRecord: { ru: "Редактировать", nl: "Bewerken", en: "Edit" },
     saveRecord: { ru: "Сохранить изменения", nl: "Wijzigingen opslaan", en: "Save changes" },
     saved: { ru: "Изменения сохранены.", nl: "Wijzigingen opgeslagen.", en: "Changes saved." },
@@ -563,11 +565,49 @@ const setupGalleryPhotoActions = () => {
   status.hidden = true;
   galleryList.parentElement?.append(status);
 
+  const lightbox = document.createElement("div");
+  lightbox.className = "gallery-lightbox";
+  lightbox.setAttribute("role", "dialog");
+  lightbox.setAttribute("aria-modal", "true");
+  lightbox.setAttribute("tabindex", "-1");
+  lightbox.hidden = true;
+  const lightboxImage = document.createElement("img");
+  lightboxImage.className = "gallery-lightbox-image";
+  const closeLightboxButton = document.createElement("button");
+  closeLightboxButton.className = "gallery-lightbox-close";
+  closeLightboxButton.type = "button";
+  closeLightboxButton.textContent = "×";
+  lightbox.append(lightboxImage, closeLightboxButton);
+  document.body.append(lightbox);
+
   let activeImage = null;
   let activeMenu = null;
+  let lightboxSourceImage = null;
   let pressTimer = 0;
   let pressOrigin = null;
   let ignoreNextImageClick = false;
+
+  const closeLightbox = (restoreFocus = false) => {
+    if (lightbox.hidden) return;
+    const previousImage = lightboxSourceImage;
+    lightbox.hidden = true;
+    lightboxImage.removeAttribute("src");
+    document.body.classList.remove("has-gallery-lightbox");
+    lightboxSourceImage = null;
+    if (restoreFocus) previousImage?.focus();
+  };
+
+  const showLightbox = (image) => {
+    closeMenu();
+    lightboxSourceImage = image;
+    lightboxImage.src = image.currentSrc || image.src;
+    lightboxImage.alt = image.alt;
+    lightbox.setAttribute("aria-label", getDynamicLabel("photoPreview"));
+    closeLightboxButton.setAttribute("aria-label", getDynamicLabel("closePhotoPreview"));
+    lightbox.hidden = false;
+    document.body.classList.add("has-gallery-lightbox");
+    closeLightboxButton.focus();
+  };
 
   const closeMenu = (restoreFocus = false) => {
     const previousImage = activeImage;
@@ -746,6 +786,23 @@ const setupGalleryPhotoActions = () => {
     }
   });
 
+  galleryList.addEventListener("dblclick", (event) => {
+    const image = event.target instanceof Element ? event.target.closest(".gallery-photo img") : null;
+    if (!(image instanceof HTMLImageElement)) return;
+    event.preventDefault();
+    showLightbox(image);
+  });
+
+  lightbox.addEventListener("click", (event) => {
+    if (event.target === lightbox || event.target === closeLightboxButton) closeLightbox(true);
+  });
+  lightbox.addEventListener("keydown", (event) => {
+    if (event.key === "Tab") {
+      event.preventDefault();
+      closeLightboxButton.focus();
+    }
+  });
+
   galleryList.addEventListener("click", (event) => {
     if (event.target === activeMenu) {
       closeMenu();
@@ -763,7 +820,9 @@ const setupGalleryPhotoActions = () => {
     if (activeMenu && event.target instanceof Node && !activeMenu.contains(event.target)) closeMenu();
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && activeMenu) closeMenu(true);
+    if (event.key !== "Escape") return;
+    if (!lightbox.hidden) closeLightbox(true);
+    else if (activeMenu) closeMenu(true);
   });
   window.addEventListener("resize", closeMenu);
   galleryList.addEventListener("scroll", closeMenu, { passive: true });
