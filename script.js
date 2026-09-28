@@ -437,9 +437,33 @@ const renderNextGalleryBatch = () => {
     const image = document.createElement("img");
     image.src = photo.image;
     image.alt = "Фотография из жизни церкви";
+    image.tabIndex = 0;
+    image.draggable = false;
     image.loading = "lazy";
     image.decoding = "async";
     figure.append(image);
+    const menu = document.createElement("div");
+    menu.className = "gallery-photo-menu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", getDynamicLabel("photoActions"));
+    menu.hidden = true;
+    [["download", "downloadPhoto"], ["share", "sharePhoto"]].forEach(([action, label]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "gallery-photo-menu-button";
+      button.dataset.photoAction = action;
+      button.setAttribute("role", "menuitem");
+      const icon = document.createElement("span");
+      icon.className = "gallery-photo-action-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = action === "download" ? "↓" : "↗";
+      const text = document.createElement("span");
+      text.className = "gallery-photo-action-label";
+      text.textContent = getDynamicLabel(label);
+      button.append(icon, text);
+      menu.append(button);
+    });
+    figure.append(menu);
     return figure;
   });
   galleryList.append(...items);
@@ -497,6 +521,15 @@ const getDynamicLabel = (key) => {
     remove: { ru: "Удалить", nl: "Verwijderen", en: "Delete" },
     moveUp: { ru: "Переместить выше", nl: "Omhoog verplaatsen", en: "Move up" },
     moveDown: { ru: "Переместить ниже", nl: "Omlaag verplaatsen", en: "Move down" },
+    photoActions: { ru: "Действия с фотографией", nl: "Acties voor foto", en: "Photo actions" },
+    downloadPhoto: { ru: "Скачать фото", nl: "Foto downloaden", en: "Download photo" },
+    sharePhoto: { ru: "Поделиться фото", nl: "Foto delen", en: "Share photo" },
+    photoDownloaded: { ru: "Фото скачивается.", nl: "De foto wordt gedownload.", en: "Photo download started." },
+    photoShared: { ru: "Фото отправлено.", nl: "De foto is gedeeld.", en: "Photo shared." },
+    photoLinkCopied: { ru: "Ссылка на фото скопирована.", nl: "De fotolink is gekopieerd.", en: "Photo link copied." },
+    photoDownloadFailed: { ru: "Не удалось скачать фото.", nl: "De foto kon niet worden gedownload.", en: "Could not download the photo." },
+    photoShareFailed: { ru: "Не удалось поделиться фото.", nl: "De foto kon niet worden gedeeld.", en: "Could not share the photo." },
+    photoShareTitle: { ru: "Фото церкви Филадельфия", nl: "Foto van Philadelphia-kerk", en: "Philadelphia Church photo" },
     editRecord: { ru: "Редактировать", nl: "Bewerken", en: "Edit" },
     saveRecord: { ru: "Сохранить изменения", nl: "Wijzigingen opslaan", en: "Save changes" },
     saved: { ru: "Изменения сохранены.", nl: "Wijzigingen opgeslagen.", en: "Changes saved." },
@@ -518,6 +551,222 @@ const getDynamicLabel = (key) => {
     noEvents: { ru: "Сейчас нет событий ближайшие 3 месяца.", nl: "Er zijn de komende 3 maanden geen evenementen.", en: "There are no events in the next 3 months." },
   };
   return labels[key]?.[language] || "";
+};
+
+const setupGalleryPhotoActions = () => {
+  if (!galleryList) return;
+
+  const status = document.createElement("p");
+  status.className = "gallery-photo-action-status";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+  status.hidden = true;
+  galleryList.parentElement?.append(status);
+
+  let activeImage = null;
+  let activeMenu = null;
+  let pressTimer = 0;
+  let pressOrigin = null;
+  let ignoreNextImageClick = false;
+
+  const closeMenu = (restoreFocus = false) => {
+    const previousImage = activeImage;
+    if (activeMenu) {
+      activeMenu.hidden = true;
+      activeMenu.closest(".gallery-photo")?.classList.remove("is-actions-open");
+    }
+    activeImage = null;
+    activeMenu = null;
+    if (restoreFocus) previousImage?.focus();
+  };
+
+  const showMenu = (image) => {
+    const figure = image.closest(".gallery-photo");
+    const menu = figure?.querySelector(".gallery-photo-menu");
+    if (!(menu instanceof HTMLElement)) return;
+    closeMenu();
+    activeImage = image;
+    activeMenu = menu;
+    figure.classList.add("is-actions-open");
+    menu.setAttribute("aria-label", getDynamicLabel("photoActions"));
+    menu.querySelector('[data-photo-action="download"] .gallery-photo-action-label').textContent = getDynamicLabel("downloadPhoto");
+    menu.querySelector('[data-photo-action="share"] .gallery-photo-action-label').textContent = getDynamicLabel("sharePhoto");
+    menu.hidden = false;
+    menu.querySelector("button")?.focus();
+  };
+
+  const clearPressTimer = () => {
+    window.clearTimeout(pressTimer);
+    pressTimer = 0;
+    pressOrigin = null;
+  };
+
+  const showStatus = (message) => {
+    status.textContent = message;
+    status.hidden = false;
+  };
+
+  const getPhotoBlob = async (image) => {
+    const response = await fetch(image.currentSrc || image.src);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.blob();
+  };
+
+  const getPhotoFile = (blob) => {
+    const mimeType = blob.type || "image/jpeg";
+    const extension = {
+      "image/avif": "avif",
+      "image/gif": "gif",
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    }[mimeType] || "jpg";
+    return new File([blob], `philadelphia-photo.${extension}`, { type: mimeType });
+  };
+
+  const downloadPhoto = async (image) => {
+    try {
+      const blob = await getPhotoBlob(image);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = getPhotoFile(blob).name;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showStatus(getDynamicLabel("photoDownloaded"));
+    } catch (error) {
+      showStatus(`${getDynamicLabel("photoDownloadFailed")} ${error instanceof Error ? error.message : ""}`.trim());
+    }
+  };
+
+  const copyPhotoLink = async (image) => {
+    const photoUrl = image.currentSrc || image.src;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(photoUrl);
+        showStatus(getDynamicLabel("photoLinkCopied"));
+        return;
+      } catch {
+        // Fall back to a temporary text field when clipboard permissions are unavailable.
+      }
+    }
+
+    const input = document.createElement("textarea");
+    input.value = photoUrl;
+    input.setAttribute("readonly", "");
+    input.className = "gallery-photo-copy-field";
+    document.body.append(input);
+    input.select();
+    const copied = document.execCommand("copy");
+    input.remove();
+    if (!copied) throw new Error("Clipboard access is unavailable.");
+    showStatus(getDynamicLabel("photoLinkCopied"));
+  };
+
+  const sharePhoto = async (image) => {
+    let blob;
+    try {
+      blob = await getPhotoBlob(image);
+    } catch {
+      try {
+        await copyPhotoLink(image);
+      } catch (error) {
+        showStatus(`${getDynamicLabel("photoShareFailed")} ${error instanceof Error ? error.message : ""}`.trim());
+      }
+      return;
+    }
+
+    try {
+      const file = getPhotoFile(blob);
+      const canShareFile = typeof navigator.share === "function"
+        && typeof navigator.canShare === "function"
+        && navigator.canShare({ files: [file] });
+      if (canShareFile) {
+        try {
+          await navigator.share({ files: [file], title: getDynamicLabel("photoShareTitle") });
+          showStatus(getDynamicLabel("photoShared"));
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          await copyPhotoLink(image);
+          return;
+        }
+      }
+
+      await copyPhotoLink(image);
+    } catch (error) {
+      showStatus(`${getDynamicLabel("photoShareFailed")} ${error instanceof Error ? error.message : ""}`.trim());
+    }
+  };
+
+  galleryList.addEventListener("contextmenu", (event) => {
+    const image = event.target instanceof Element ? event.target.closest(".gallery-photo img") : null;
+    if (!(image instanceof HTMLImageElement)) return;
+    event.preventDefault();
+    showMenu(image);
+  });
+
+  galleryList.addEventListener("keydown", (event) => {
+    const image = event.target instanceof Element ? event.target.closest(".gallery-photo img") : null;
+    if (!(image instanceof HTMLImageElement) || (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10"))) return;
+    event.preventDefault();
+    showMenu(image);
+  });
+
+  galleryList.addEventListener("pointerdown", (event) => {
+    const image = event.target instanceof Element ? event.target.closest(".gallery-photo img") : null;
+    if (!(image instanceof HTMLImageElement) || event.pointerType === "mouse") return;
+    clearPressTimer();
+    pressOrigin = { x: event.clientX, y: event.clientY };
+    pressTimer = window.setTimeout(() => {
+      ignoreNextImageClick = true;
+      window.setTimeout(() => { ignoreNextImageClick = false; }, 1200);
+      pressTimer = 0;
+      showMenu(image);
+    }, 550);
+  });
+
+  galleryList.addEventListener("pointermove", (event) => {
+    if (!pressOrigin) return;
+    if (Math.abs(event.clientX - pressOrigin.x) > 12 || Math.abs(event.clientY - pressOrigin.y) > 12) {
+      clearPressTimer();
+    }
+  });
+  galleryList.addEventListener("pointerup", clearPressTimer);
+  galleryList.addEventListener("pointercancel", clearPressTimer);
+  galleryList.addEventListener("pointerleave", clearPressTimer);
+  galleryList.addEventListener("click", (event) => {
+    const image = event.target instanceof Element ? event.target.closest(".gallery-photo img") : null;
+    if (image instanceof HTMLImageElement) {
+      if (ignoreNextImageClick) {
+        ignoreNextImageClick = false;
+        return;
+      }
+      closeMenu();
+    }
+  });
+
+  galleryList.addEventListener("click", (event) => {
+    if (event.target === activeMenu) {
+      closeMenu();
+      return;
+    }
+    const button = event.target instanceof Element ? event.target.closest("[data-photo-action]") : null;
+    if (!(button instanceof HTMLButtonElement) || !activeImage) return;
+    const image = activeImage;
+    closeMenu(true);
+    if (button.dataset.photoAction === "download") void downloadPhoto(image);
+    if (button.dataset.photoAction === "share") void sharePhoto(image);
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (activeMenu && event.target instanceof Node && !activeMenu.contains(event.target)) closeMenu();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && activeMenu) closeMenu(true);
+  });
+  window.addEventListener("resize", closeMenu);
+  galleryList.addEventListener("scroll", closeMenu, { passive: true });
 };
 
 const formatAdminRecordCount = (count, type) => {
@@ -1034,3 +1283,4 @@ renderLeaders();
 renderHomeGroups();
 renderPresbyters();
 renderGallery();
+setupGalleryPhotoActions();

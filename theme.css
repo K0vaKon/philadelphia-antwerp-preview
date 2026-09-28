@@ -661,6 +661,61 @@
   background: #fff;
 }
 
+#home-groups .horizontal-people-list {
+  background: transparent;
+  gap: 26px;
+  padding: 0 0 22px;
+}
+
+#home-groups.community-directory {
+  background: #f6f4ed;
+}
+
+#home-groups .section-top h2 {
+  color: #142b4a;
+}
+
+#home-groups .section-top h2 span {
+  color: #b08213;
+}
+
+#home-groups .section-top .eyebrow {
+  color: #b08213;
+}
+
+#home-groups .directory-empty {
+  color: #64738a;
+}
+
+#home-groups .home-group-card {
+  background: #142b4a;
+  border: 1px solid rgba(20, 43, 74, .12);
+  border-top: 3px solid #f3c94f;
+  border-radius: 6px;
+  box-shadow: 0 14px 34px rgba(20, 43, 74, .12);
+  padding-bottom: 28px;
+}
+
+#home-groups .home-group-photo {
+  border: 4px solid #f3c94f;
+}
+
+#home-groups .home-group-tag {
+  background: rgba(243, 201, 79, .14);
+  border: 1px solid rgba(243, 201, 79, .5);
+  color: #f3c94f;
+}
+
+#home-groups .home-group-leader-label,
+#home-groups .home-group-day,
+#home-groups .home-group-description {
+  color: #c5d1df;
+}
+
+#home-groups .home-group-info h3 {
+  color: #fff;
+}
+
 .horizontal-people-list {
   display: grid;
   gap: 22px;
@@ -922,6 +977,11 @@
   .horizontal-people-list {
     gap: 14px;
     grid-auto-columns: minmax(230px, 78%);
+  }
+
+  #home-groups .horizontal-people-list {
+    gap: 16px;
+    padding: 0 0 18px;
   }
 }
 

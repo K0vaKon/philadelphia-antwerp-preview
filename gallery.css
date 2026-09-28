@@ -16,18 +16,32 @@
   break-inside: avoid;
   margin: 0 0 20px;
   overflow: hidden;
+  position: relative;
 }
 
 .gallery-photo img {
   background: #eaf0f7;
   display: block;
   height: auto;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
   transition: transform .35s ease;
   width: 100%;
 }
 
 .gallery-photo:hover img {
   transform: scale(1.025);
+}
+
+.gallery-photo.is-actions-open {
+  background: #142b4a;
+}
+
+.gallery-photo.is-actions-open img {
+  border: 4px solid #fff;
+  box-shadow: 0 10px 26px rgba(10, 28, 51, .28);
+  transform: scale(.9);
 }
 
 .gallery-empty {
@@ -37,6 +51,75 @@
   margin: 0;
   padding: 42px 28px;
   text-align: center;
+}
+
+.gallery-photo-menu {
+  align-items: center;
+  background: rgba(10, 28, 51, .42);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: 2;
+}
+
+.gallery-photo-menu[hidden] {
+  display: none;
+}
+
+.gallery-photo-menu-button {
+  align-items: center;
+  background: #f3c94f;
+  border: 1px solid #f3c94f;
+  border-radius: 99px;
+  box-shadow: 0 8px 24px rgba(10, 28, 51, .3);
+  color: #142b4a;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 9px;
+  justify-content: center;
+  min-height: 42px;
+  min-width: 170px;
+  padding: 0 16px;
+  pointer-events: auto;
+}
+
+.gallery-photo-menu-button + .gallery-photo-menu-button {
+  background: rgba(20, 43, 74, .96);
+  border-color: #f3c94f;
+  color: #fff;
+}
+
+.gallery-photo-action-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.gallery-photo-menu-button:hover,
+.gallery-photo-menu-button:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, .85);
+  outline-offset: 2px;
+}
+
+.gallery-photo-action-status {
+  background: #eaf0f7;
+  border-left: 3px solid #f3c94f;
+  color: #142b4a;
+  margin: 18px 0 0;
+  padding: 12px 16px;
+}
+
+.gallery-photo-copy-field {
+  height: 1px;
+  left: -9999px;
+  opacity: 0;
+  position: fixed;
+  width: 1px;
 }
 
 .gallery-load-more {
