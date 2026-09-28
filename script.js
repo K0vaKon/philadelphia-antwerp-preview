@@ -1,3 +1,11 @@
+const navigationType = performance.getEntriesByType("navigation")[0]?.type;
+if (navigationType === "reload") {
+  history.scrollRestoration = "manual";
+  window.addEventListener("load", () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, { once: true });
+}
+
 const menuButton = document.querySelector(".menu-toggle");
 const navigation = document.querySelector(".main-nav");
 const adminContent = document.querySelector("#admin-content");
@@ -144,6 +152,9 @@ if (menuButton && navigation) {
 const videosContainer = document.querySelector("#latest-videos");
 const channelId = "UCarf1uXs7OfnPYr9Oc0J8Cw";
 const feedUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`)}`;
+const pageLanguage = ["ru", "nl", "en"].includes(localStorage.getItem("philadelphia-language"))
+  ? localStorage.getItem("philadelphia-language")
+  : "ru";
 
 if (videosContainer) {
   fetch(feedUrl)
@@ -156,9 +167,24 @@ if (videosContainer) {
         throw new Error("Видео не найдены");
       }
 
+      const videoLocale = { ru: "ru-RU", nl: "nl-BE", en: "en-GB" }[pageLanguage];
+      const watchLabel = { ru: "Смотреть видео", nl: "Video bekijken", en: "Watch video" }[pageLanguage];
+      const videoTitleTranslations = {
+        nl: {
+          "Соответствуй тому, кто ты есть, христианин.": "Wees wie je als christen bent.",
+          "Молитвенное поклонение": "Gebed en aanbidding",
+          "Ищите славу, которая от Единого Бога": "Zoek de eer die van de enige God komt",
+        },
+        en: {
+          "Соответствуй тому, кто ты есть, христианин.": "Be who you are called to be as a Christian.",
+          "Молитвенное поклонение": "Prayer and worship",
+          "Ищите славу, которая от Единого Бога": "Seek the glory that comes from the only God",
+        },
+      };
       videosContainer.innerHTML = data.items.slice(0, 3).map((video) => {
         const videoId = video.guid.replace("yt:video:", "");
-        const publishedDate = new Date(video.pubDate).toLocaleDateString("ru-RU", {
+        const title = videoTitleTranslations[pageLanguage]?.[video.title] || video.title;
+        const publishedDate = new Date(video.pubDate).toLocaleDateString(videoLocale, {
           day: "numeric",
           month: "long",
           year: "numeric",
@@ -166,15 +192,25 @@ if (videosContainer) {
 
         return `<article class="video-card">
           <a class="video-thumb" href="${video.link}" target="_blank" rel="noreferrer">
-            <img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" alt="${video.title}" loading="lazy" />
+            <img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" alt="${title}" loading="lazy" />
             <span class="video-play">▶</span>
           </a>
-          <div class="video-info"><p>${publishedDate}</p><h3>${video.title}</h3><a href="${video.link}" target="_blank" rel="noreferrer">Смотреть видео <span>↗</span></a></div>
+          <div class="video-info"><p>${publishedDate}</p><h3>${title}</h3><a href="${video.link}" target="_blank" rel="noreferrer">${watchLabel} <span>↗</span></a></div>
         </article>`;
       }).join("");
     })
     .catch(() => {
-      videosContainer.innerHTML = `<p class="video-status">Видео временно недоступны. <a href="https://www.youtube.com/@Church_P" target="_blank" rel="noreferrer">Открыть канал на YouTube ↗</a></p>`;
+      const unavailable = {
+        ru: "Видео временно недоступны.",
+        nl: "Video's zijn tijdelijk niet beschikbaar.",
+        en: "Videos are temporarily unavailable.",
+      }[pageLanguage];
+      const channelLabel = {
+        ru: "Открыть канал на YouTube",
+        nl: "Kanaal openen op YouTube",
+        en: "Open the YouTube channel",
+      }[pageLanguage];
+      videosContainer.innerHTML = `<p class="video-status">${unavailable} <a href="https://www.youtube.com/@Church_P" target="_blank" rel="noreferrer">${channelLabel} ↗</a></p>`;
     });
 }
 
@@ -312,11 +348,13 @@ const normalizeBackupItems = (items, type) => {
   return items.map((item) => {
     if (!item || typeof item !== "object" || typeof item.id !== "string" || typeof item.title !== "string") throw new Error(`Некорректная запись ${type}.`);
     const normalized = { ...item };
-    ["id", "title", "tag", "description", "date", "time", "image"].forEach((key) => {
+    ["id", "title", "tag", "description", "date", "time", "image", "spouseImage", "husbandFirstName", "husbandLastName", "wifeFirstName", "wifeLastName"].forEach((key) => {
       if (normalized[key] !== undefined && typeof normalized[key] !== "string") throw new Error(`Некорректное поле ${key}.`);
       if (typeof normalized[key] === "string" && normalized[key].length > 1000000) throw new Error("Слишком большое текстовое поле.");
     });
-    if (!isSafeImage(normalized.image || "")) throw new Error("Разрешены только изображения и безопасные HTTPS-ссылки.");
+    if (!isSafeImage(normalized.image || "") || !isSafeImage(normalized.spouseImage || "")) {
+      throw new Error("Разрешены только изображения и безопасные HTTPS-ссылки.");
+    }
     return normalized;
   });
 };
@@ -549,7 +587,7 @@ const getDynamicLabel = (key) => {
     noPresbyters: { ru: "Пресвитеры пока не добавлены.", nl: "Er zijn nog geen ouderlingen toegevoegd.", en: "No presbyters have been added yet." },
     createRecordError: { ru: "Не удалось добавить запись.", nl: "De invoer kon niet worden toegevoegd.", en: "Could not add the entry." },
     homeGroupAdded: { ru: "Домашняя группа добавлена.", nl: "Huiskring toegevoegd.", en: "Home group added." },
-    presbyterAdded: { ru: "Пресвитер добавлен.", nl: "Ouderling toegevoegd.", en: "Presbyter added." },
+    presbyterAdded: { ru: "Пресвитерская семья добавлена.", nl: "Ouderlingenechtpaar toegevoegd.", en: "Presbyter family added." },
     noEvents: { ru: "Сейчас нет событий ближайшие 3 месяца.", nl: "Er zijn de komende 3 maanden geen evenementen.", en: "There are no events in the next 3 months." },
   };
   return labels[key]?.[language] || "";
@@ -833,7 +871,7 @@ const formatAdminRecordCount = (count, type) => {
   const labels = {
     event: { ru: ["событие", "события", "событий"], nl: "evenementen", en: ["event", "events"] },
     homeGroup: { ru: ["домашняя группа", "домашние группы", "домашних групп"], nl: "huiskringen", en: ["home group", "home groups"] },
-    presbyter: { ru: ["пресвитер", "пресвитера", "пресвитеров"], nl: "ouderlingen", en: ["presbyter", "presbyters"] },
+    presbyter: { ru: ["пресвитерская семья", "пресвитерские семьи", "пресвитерских семей"], nl: "ouderlingenechtparen", en: ["presbyter family", "presbyter families"] },
     leader: { ru: ["лидер", "лидера", "лидеров"], nl: "leiders", en: ["leader", "leaders"] },
   };
   const names = labels[type];
@@ -860,8 +898,22 @@ const createRecordTranslations = (formData, translatableFields = ["title", "tag"
   return [language, fields];
 }).filter(([, fields]) => Object.values(fields).some(Boolean)));
 
+const splitLegacyPresbyterName = (record) => {
+  const [firstName = "", ...lastNameParts] = String(record.title || "").trim().split(/\s+/);
+  return { firstName, lastName: lastNameParts.join(" ") };
+};
+
+const getPresbyterFamilyTitle = (record) => {
+  if (record.husbandFirstName && record.wifeFirstName) {
+    return `${record.husbandFirstName} ${record.husbandLastName || ""} & ${record.wifeFirstName} ${record.wifeLastName || ""}`.trim();
+  }
+  return record.title || getDynamicLabel("presbyter");
+};
+
 const recordEditorMarkup = (record, type) => {
   const isHomeGroup = type === "homeGroup";
+  const isPresbyter = type === "presbyter";
+  const legacyName = isPresbyter ? splitLegacyPresbyterName(record) : { firstName: "", lastName: "" };
   const fieldLabels = {
     title: getDynamicLabel("title"),
     tag: getDynamicLabel("category"),
@@ -877,15 +929,26 @@ const recordEditorMarkup = (record, type) => {
       <label>${fieldLabels.day}${getWeekdaySelect(record.day)}</label>
       <label>${getDynamicLabel("shortDescription")}<textarea name="description" rows="3" required>${escapeHtml(record.description || "")}</textarea></label>
     </fieldset>`
+    : isPresbyter
+      ? `<fieldset class="presbyter-person-fields"><legend>Муж</legend>
+        <label>Имя мужа<input name="husbandFirstName" value="${escapeHtml(record.husbandFirstName || legacyName.firstName)}" required /></label>
+        <label>Фамилия мужа<input name="husbandLastName" value="${escapeHtml(record.husbandLastName || legacyName.lastName)}" required /></label>
+        <label>Фото мужа<input name="image" type="file" accept="image/*" />${record.image ? `<img class="admin-edit-image" src="${escapeHtml(record.image)}" alt="Фото мужа" loading="lazy" />` : ""}</label>
+      </fieldset>
+      <fieldset class="presbyter-person-fields"><legend>Жена</legend>
+        <label>Имя жены<input name="wifeFirstName" value="${escapeHtml(record.wifeFirstName || "")}" required /></label>
+        <label>Фамилия жены<input name="wifeLastName" value="${escapeHtml(record.wifeLastName || "")}" required /></label>
+        <label>Фото жены<input name="spouseImage" type="file" accept="image/*" />${record.spouseImage ? `<img class="admin-edit-image" src="${escapeHtml(record.spouseImage)}" alt="Фото жены" loading="lazy" />` : ""}</label>
+      </fieldset>`
     : `<fieldset><legend>${getDynamicLabel("source")}</legend>
     <label>${fieldLabels.title}<input name="title" value="${escapeHtml(record.title || "")}" required /></label>
     ${type === "event" ? `<label>${getDynamicLabel("date")}<input name="date" type="date" value="${escapeHtml(record.date || "")}" required /></label><label>${getDynamicLabel("time")}<input name="time" type="time" value="${escapeHtml(formatEventTime(record.time || ""))}" required /></label>` : ""}
     <label>${fieldLabels.tag}<input name="tag" value="${escapeHtml(record.tag || "")}" /></label>
     <label>${fieldLabels.description}<textarea name="description" rows="3">${escapeHtml(record.description || "")}</textarea></label>
   </fieldset>`;
-  const translationKeys = isHomeGroup ? ["leader", "location", "description"] : ["title", "tag", "description"];
+  const translationKeys = isHomeGroup ? ["leader", "location", "description"] : isPresbyter ? [] : ["title", "tag", "description"];
   const translationLabels = isHomeGroup ? fieldLabels : { ...fieldLabels, description: getDynamicLabel("description") };
-  const translationFields = contentLanguages.map((language) => {
+  const translationFields = isPresbyter ? "" : contentLanguages.map((language) => {
     const values = record.translations?.[language] || {};
     return `<fieldset><legend>${language === "nl" ? "Nederlands" : "English"}</legend>${translationKeys.map((field) => {
       const legacyField = field === "leader" ? "title" : field === "location" ? "tag" : field;
@@ -896,7 +959,7 @@ const recordEditorMarkup = (record, type) => {
       return `<label>${translationLabels[field]}${input}</label>`;
     }).join("")}</fieldset>`;
   }).join("");
-  return `<details class="admin-record-editor"><summary>${getDynamicLabel("editRecord")}</summary><form data-record-editor="${type}" data-record-id="${escapeHtml(record.id)}">${sourceFields}${translationFields}<label>${getDynamicLabel("image")}<input name="image" type="file" accept="image/*" /></label><img class="admin-edit-image" src="${escapeHtml(record.image || "")}" alt="${getDynamicLabel("image")}" loading="lazy" /><button class="button button-dark" type="submit">${getDynamicLabel("saveRecord")}</button><p class="record-save-message" role="status"></p></form></details>`;
+  return `<details class="admin-record-editor"><summary>${getDynamicLabel("editRecord")}</summary><form data-record-editor="${type}" data-record-id="${escapeHtml(record.id)}">${sourceFields}${translationFields}${isPresbyter ? "" : `<label>${getDynamicLabel("image")}<input name="image" type="file" accept="image/*" /></label><img class="admin-edit-image" src="${escapeHtml(record.image || "")}" alt="${getDynamicLabel("image")}" loading="lazy" />`}<button class="button button-dark" type="submit">${getDynamicLabel("saveRecord")}</button><p class="record-save-message" role="status"></p></form></details>`;
 };
 
 const bindRecordEditors = (container, storageKey, type, render) => {
@@ -911,17 +974,29 @@ const bindRecordEditors = (container, storageKey, type, render) => {
         if (!record) throw new Error("Запись не найдена. Обновите страницу и попробуйте снова.");
 
         const formData = new FormData(form);
-        const image = await prepareUploadedImage(formData.get("image"));
+        const [image, spouseImage] = await Promise.all([
+          prepareUploadedImage(formData.get("image")),
+          type === "presbyter" ? prepareUploadedImage(formData.get("spouseImage")) : "",
+        ]);
         const updatedRecord = {
           ...record,
-          description: String(formData.get("description") || "").trim(),
-          translations: createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
+          ...(type === "presbyter" ? {} : {
+            description: String(formData.get("description") || "").trim(),
+            translations: createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
+          }),
           image: image || record.image,
+          ...(type === "presbyter" ? { spouseImage: spouseImage || record.spouseImage || "" } : {}),
         };
         if (type === "homeGroup") {
           updatedRecord.leader = String(formData.get("leader") || "").trim();
           updatedRecord.location = String(formData.get("location") || "").trim();
           updatedRecord.day = String(formData.get("day") || "");
+        } else if (type === "presbyter") {
+          updatedRecord.husbandFirstName = String(formData.get("husbandFirstName") || "").trim();
+          updatedRecord.husbandLastName = String(formData.get("husbandLastName") || "").trim();
+          updatedRecord.wifeFirstName = String(formData.get("wifeFirstName") || "").trim();
+          updatedRecord.wifeLastName = String(formData.get("wifeLastName") || "").trim();
+          updatedRecord.title = getPresbyterFamilyTitle(updatedRecord);
         } else {
           updatedRecord.title = String(formData.get("title") || "").trim();
           updatedRecord.tag = String(formData.get("tag") || "").trim();
@@ -931,7 +1006,8 @@ const bindRecordEditors = (container, storageKey, type, render) => {
           updatedRecord.time = String(formData.get("time") || "");
         }
         if ((type === "homeGroup" && (!updatedRecord.leader || !updatedRecord.location || !updatedRecord.day || !updatedRecord.description))
-          || (type !== "homeGroup" && (!updatedRecord.title || (type === "event" && (!updatedRecord.date || !updatedRecord.time))))) {
+          || (type === "presbyter" && (!updatedRecord.husbandFirstName || !updatedRecord.husbandLastName || !updatedRecord.wifeFirstName || !updatedRecord.wifeLastName))
+          || (type !== "homeGroup" && type !== "presbyter" && (!updatedRecord.title || (type === "event" && (!updatedRecord.date || !updatedRecord.time))))) {
           throw new Error("Заполните все обязательные поля.");
         }
 
@@ -991,11 +1067,31 @@ const homeGroupCardMarkup = (record, compact) => {
   </article>`;
 };
 
+const presbyterFamilyCardMarkup = (record) => {
+  const hasFamilyNames = record.husbandFirstName && record.husbandLastName && record.wifeFirstName && record.wifeLastName;
+  const husbandImage = record.image || "";
+  const wifeImage = record.spouseImage || "";
+  const husbandPhoto = `<div class="presbyter-portrait${husbandImage ? "" : " presbyter-portrait-placeholder"}" ${husbandImage ? `style="background-image:url('${escapeHtml(husbandImage)}')"` : 'aria-hidden="true"'}></div>`;
+  const wifePhoto = `<div class="presbyter-portrait${wifeImage ? "" : " presbyter-portrait-placeholder"}" ${wifeImage ? `style="background-image:url('${escapeHtml(wifeImage)}')"` : 'aria-hidden="true"'}></div>`;
+  const people = hasFamilyNames
+    ? `<div class="presbyter-portraits">${husbandPhoto}${wifePhoto}</div>
+      <div class="presbyter-family-names">
+        <p class="presbyter-person-name"><span class="presbyter-first-name">${escapeHtml(record.husbandFirstName)}</span><span class="presbyter-last-name">${escapeHtml(record.husbandLastName)}</span></p>
+        <span class="presbyter-couple-mark" aria-hidden="true">♡</span>
+        <p class="presbyter-person-name"><span class="presbyter-first-name">${escapeHtml(record.wifeFirstName)}</span><span class="presbyter-last-name">${escapeHtml(record.wifeLastName)}</span></p>
+      </div>`
+    : `<div class="presbyter-portraits presbyter-portraits-single">${husbandPhoto}</div>
+      <p class="presbyter-person-name presbyter-person-name-legacy">${escapeHtml(record.title || getDynamicLabel("presbyter"))}</p>`;
+  return `<article class="presbyter-family-card">${people}</article>`;
+};
+
 const renderDirectory = (records, list, emptyLabel, type, compact = false) => {
   if (!list) return;
   list.innerHTML = records.length
     ? records.map((record) => type === "homeGroup"
       ? homeGroupCardMarkup(record, compact)
+      : type === "presbyter"
+        ? presbyterFamilyCardMarkup(record)
       : leaderCardMarkup(record, compact, type)).join("")
     : `<p class="directory-empty">${getDynamicLabel(emptyLabel)}</p>`;
 };
@@ -1005,10 +1101,12 @@ const renderAdminDirectory = (records, container, storageKey, type, render) => {
   updateAdminRecordCount(container, records.length, type);
   container.innerHTML = records.length
     ? records.map((record, index) => {
-      const title = type === "homeGroup" ? getLocalizedHomeGroupField(record, "leader") : getLocalizedRecordField(record, "title");
+      const title = type === "homeGroup"
+        ? getLocalizedHomeGroupField(record, "leader")
+        : type === "presbyter" ? getPresbyterFamilyTitle(record) : getLocalizedRecordField(record, "title");
       const details = type === "homeGroup"
         ? [getLocalizedHomeGroupField(record, "location"), record.day ? getDynamicLabel(record.day) : ""].filter(Boolean).join(" · ")
-        : getLocalizedRecordField(record, "tag") || getDynamicLabel(type);
+        : type === "presbyter" ? getDynamicLabel("presbyter") : getLocalizedRecordField(record, "tag") || getDynamicLabel(type);
       const orderControls = type === "homeGroup"
         ? `<div class="admin-record-order"><button type="button" data-move-home-group="up" data-record-id="${escapeHtml(record.id)}" aria-label="${getDynamicLabel("moveUp")}" title="${getDynamicLabel("moveUp")}"${index === 0 ? " disabled" : ""}>↑</button><button type="button" data-move-home-group="down" data-record-id="${escapeHtml(record.id)}" aria-label="${getDynamicLabel("moveDown")}" title="${getDynamicLabel("moveDown")}"${index === records.length - 1 ? " disabled" : ""}>↓</button></div>`
         : "";
@@ -1207,12 +1305,17 @@ const bindDirectoryForm = (form, storageKey, messageId, render, type) => {
 
     const formData = new FormData(form);
     try {
-      const image = await prepareUploadedImage(formData.get("image"));
+      const isPresbyter = type === "presbyter";
+      const [image, spouseImage] = await Promise.all([
+        prepareUploadedImage(formData.get("image")),
+        isPresbyter ? prepareUploadedImage(formData.get("spouseImage")) : "",
+      ]);
       const record = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        description: String(formData.get("description") || "").trim(),
-        translations: createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
-        image: image || "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
+        description: isPresbyter ? "" : String(formData.get("description") || "").trim(),
+        translations: isPresbyter ? {} : createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
+        image: image || (isPresbyter ? "" : "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80"),
+        ...(isPresbyter ? { spouseImage: spouseImage || "" } : {}),
       };
       if (type === "homeGroup") {
         record.leader = String(formData.get("leader") || "").trim();
@@ -1222,9 +1325,15 @@ const bindDirectoryForm = (form, storageKey, messageId, render, type) => {
           throw new Error("Заполните имя лидера, место/район, день недели и описание.");
         }
       } else {
-        record.title = String(formData.get("title") || "").trim();
-        record.tag = String(formData.get("tag") || "").trim();
-        if (!record.title || !record.description) throw new Error("Заполните название и описание.");
+        record.husbandFirstName = String(formData.get("husbandFirstName") || "").trim();
+        record.husbandLastName = String(formData.get("husbandLastName") || "").trim();
+        record.wifeFirstName = String(formData.get("wifeFirstName") || "").trim();
+        record.wifeLastName = String(formData.get("wifeLastName") || "").trim();
+        record.title = getPresbyterFamilyTitle(record);
+        record.tag = "Пресвитерская семья";
+        if (!record.husbandFirstName || !record.husbandLastName || !record.wifeFirstName || !record.wifeLastName || !image || !spouseImage) {
+          throw new Error("Заполните имя и фамилию обоих супругов и добавьте обе фотографии.");
+        }
       }
       const successMessage = type === "homeGroup" ? getDynamicLabel("homeGroupAdded") : getDynamicLabel("presbyterAdded");
       if (saveAdminRecord(storageKey, record, message, successMessage, render)) form.reset();

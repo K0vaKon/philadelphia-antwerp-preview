@@ -5,8 +5,11 @@ const translations = {
     "Управление": "Управление", "сайтом.": "сайтом.",
     "Выберите раздел — его форма и список записей будут собраны вместе.": "Выберите раздел — его форма и список записей будут собраны вместе.",
     "Домашние": "Домашние", "группы.": "группы.",
-    "Пасторская команда": "Пасторская команда", "Наши": "Наши", "пресвитеры.": "пресвитеры.",
-    "Добавить домашнюю группу": "Добавить домашнюю группу", "Добавить пресвитера": "Добавить пресвитера", "Фото": "Фото",
+    "Пасторская команда": "Пасторская команда", "Наши": "Наши", "пресвитеры.": "пресвитеры.", "пресвитерские семьи.": "пресвитерские семьи.",
+    "Добавить домашнюю группу": "Добавить домашнюю группу", "Добавить пресвитера": "Добавить пресвитера", "Добавить пресвитерскую семью": "Добавить пресвитерскую семью", "Фото": "Фото",
+    "Супруги появятся вместе в отдельном списке на странице служений.": "Супруги появятся вместе в отдельном списке на странице служений.",
+    "Муж": "Муж", "Жена": "Жена", "Имя мужа": "Имя мужа", "Фамилия мужа": "Фамилия мужа", "Фото мужа": "Фото мужа",
+    "Имя жены": "Имя жены", "Фамилия жены": "Фамилия жены", "Фото жены": "Фото жены", "Пресвитерская семья": "Пресвитерская семья",
     "Кто лидер": "Кто лидер", "Лидер": "Лидер", "Место/район": "Место/район", "День недели": "День недели",
     "Выберите день": "Выберите день", "Небольшое описание": "Небольшое описание",
     "Понедельник": "Понедельник", "Вторник": "Вторник", "Среда": "Среда", "Четверг": "Четверг",
@@ -20,10 +23,11 @@ const translations = {
     "Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.": "Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.",
     "Лидеры служения": "Лидеры служения", "лидеры служения.": "лидеры служения.",
     "домашние группы.": "домашние группы.", "Посмотреть всех": "Посмотреть всех", "Добавить лидера": "Добавить лидера",
-    "Вера • Надежда • Любовь": "Вера • Надежда • Любовь", "Место, где можно": "Место, где можно", "быть собой.": "быть собой.",
+    "Вера • Надежда • Любовь": "Вера • Надежда • Любовь", "Место, где тебя": "Место, где тебя", "ждёт Господь": "ждёт Господь",
     "Я хочу прийти": "Я хочу прийти", "Новая жизнь начинается здесь": "Новая жизнь начинается здесь",
     "Церковь Филадельфия — это открытое сообщество, где каждый может найти духовную поддержку, изучение Слова Божьего и искреннее общение в духе Христовой любви.": "Церковь Филадельфия — это открытое сообщество, где каждый может найти духовную поддержку, изучение Слова Божьего и искреннее общение в духе Христовой любви.",
     "Приходите как есть.": "Приходите как есть.", "Адрес": "Адрес", "Связаться": "Связаться",
+    "Время служения": "Время служения", "Воскресная школа": "Воскресная школа", "Для детей и подростков": "Для детей и подростков",
     "Мы рады каждому, кто хочет узнать больше о Боге, найти духовную поддержку и стать частью нашей церковной семьи.": "Мы рады каждому, кто хочет узнать больше о Боге, найти духовную поддержку и стать частью нашей церковной семьи.",
     "Навигация": "Навигация", "События": "События", "Контакты": "Контакты",
     "Праздник": "Праздник", "Описание": "Описание", "Собираемся как семья": "Собираемся как семья",
@@ -66,8 +70,11 @@ const translations = {
     "Управление": "Beheer", "сайтом.": "de website.",
     "Выберите раздел — его форма и список записей будут собраны вместе.": "Kies een onderdeel; het formulier en de bijbehorende items staan samen op één scherm.",
     "Домашние": "Huis", "группы.": "kringen.",
-    "Пасторская команда": "Pastoraal team", "Наши": "Onze", "пресвитеры.": "ouderlingen.",
-    "Добавить домашнюю группу": "Huiskring toevoegen", "Добавить пресвитера": "Ouderling toevoegen", "Фото": "Foto",
+    "Пасторская команда": "Pastoraal team", "Наши": "Onze", "пресвитеры.": "ouderlingen.", "пресвитерские семьи.": "ouderlingenechtparen.",
+    "Добавить домашнюю группу": "Huiskring toevoegen", "Добавить пресвитера": "Ouderling toevoegen", "Добавить пресвитерскую семью": "Ouderlingenechtpaar toevoegen", "Фото": "Foto",
+    "Супруги появятся вместе в отдельном списке на странице служений.": "Het echtpaar verschijnt samen in een aparte lijst op de bedieningenpagina.",
+    "Муж": "Man", "Жена": "Vrouw", "Имя мужа": "Voornaam van de man", "Фамилия мужа": "Achternaam van de man", "Фото мужа": "Foto van de man",
+    "Имя жены": "Voornaam van de vrouw", "Фамилия жены": "Achternaam van de vrouw", "Фото жены": "Foto van de vrouw", "Пресвитерская семья": "Ouderlingenechtpaar",
     "Кто лидер": "Wie is de leider", "Лидер": "Leider", "Место/район": "Locatie/buurt", "День недели": "Dag van de week",
     "Выберите день": "Kies een dag", "Небольшое описание": "Korte beschrijving",
     "Понедельник": "Maandag", "Вторник": "Dinsdag", "Среда": "Woensdag", "Четверг": "Donderdag",
@@ -80,10 +87,11 @@ const translations = {
     "Кратко расскажите о служении": "Vertel kort over de bediening", "Расскажите о группе": "Vertel over de groep",
     "Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.": "Download evenementen, leiders, huiskringen, ouderlingen en galerijfoto's in één bestand. Bewaar het om later te importeren.",
     "Лидеры служения": "Leiders van de bediening", "Посмотреть всех": "Bekijk iedereen", "Добавить лидера": "Leider toevoegen",
-    "Вера • Надежда • Любовь": "Geloof • Hoop • Liefde", "Место, где можно": "Een plek waar je", "быть собой.": "jezelf kunt zijn.",
+    "Вера • Надежда • Любовь": "Geloof • Hoop • Liefde", "Место, где тебя": "Een plek waar", "ждёт Господь": "de Heer op je wacht",
     "Я хочу прийти": "Ik wil komen", "Новая жизнь начинается здесь": "Nieuw leven begint hier",
     "Церковь Филадельфия — это открытое сообщество, где каждый может найти духовную поддержку, изучение Слова Божьего и искреннее общение в духе Христовой любви.": "Kerk Philadelphia is een open gemeenschap waar iedereen geestelijke steun, Bijbelonderwijs en oprechte verbondenheid in de liefde van Christus kan vinden.",
     "Приходите как есть.": "Kom zoals je bent.", "Адрес": "Adres", "Связаться": "Contact",
+    "Время служения": "Tijd van de dienst", "Воскресная школа": "Zondagschool", "Для детей и подростков": "Voor kinderen en tieners",
     "Мы рады каждому, кто хочет узнать больше о Боге, найти духовную поддержку и стать частью нашей церковной семьи.": "Iedereen die meer over God wil ontdekken, geestelijke steun zoekt en deel wil worden van onze kerkgemeenschap is welkom.",
     "Навигация": "Navigatie", "События": "Evenementen", "Контакты": "Contact",
     "Праздник": "Feest", "Описание": "Beschrijving", "Собираемся как семья": "We komen samen als familie",
@@ -127,8 +135,11 @@ const translations = {
     "Управление": "Manage", "сайтом.": "the website.",
     "Выберите раздел — его форма и список записей будут собраны вместе.": "Choose a section to see its form and existing entries together.",
     "Домашние": "Home", "группы.": "groups.",
-    "Пасторская команда": "Pastoral team", "Наши": "Our", "пресвитеры.": "presbyters.",
-    "Добавить домашнюю группу": "Add a home group", "Добавить пресвитера": "Add a presbyter", "Фото": "Photo",
+    "Пасторская команда": "Pastoral team", "Наши": "Our", "пресвитеры.": "presbyters.", "пресвитерские семьи.": "presbyter families.",
+    "Добавить домашнюю группу": "Add a home group", "Добавить пресвитера": "Add a presbyter", "Добавить пресвитерскую семью": "Add a presbyter family", "Фото": "Photo",
+    "Супруги появятся вместе в отдельном списке на странице служений.": "The couple will appear together in a separate list on the ministries page.",
+    "Муж": "Husband", "Жена": "Wife", "Имя мужа": "Husband's first name", "Фамилия мужа": "Husband's surname", "Фото мужа": "Husband's photo",
+    "Имя жены": "Wife's first name", "Фамилия жены": "Wife's surname", "Фото жены": "Wife's photo", "Пресвитерская семья": "Presbyter family",
     "Кто лидер": "Who is the leader", "Лидер": "Leader", "Место/район": "Location/area", "День недели": "Day of the week",
     "Выберите день": "Select a day", "Небольшое описание": "Short description",
     "Понедельник": "Monday", "Вторник": "Tuesday", "Среда": "Wednesday", "Четверг": "Thursday",
@@ -141,10 +152,11 @@ const translations = {
     "Кратко расскажите о служении": "Briefly describe the ministry", "Расскажите о группе": "Describe the group",
     "Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.": "Download events, leaders, home groups, presbyters, and gallery photos in one file. Save it to import later.",
     "Лидеры служения": "Ministry leaders", "Посмотреть всех": "View all", "Добавить лидера": "Add leader",
-    "Вера • Надежда • Любовь": "Faith • Hope • Love", "Место, где можно": "A place where you can", "быть собой.": "be yourself.",
+    "Вера • Надежда • Любовь": "Faith • Hope • Love", "Место, где тебя": "A place where", "ждёт Господь": "the Lord awaits you",
     "Я хочу прийти": "I want to come", "Новая жизнь начинается здесь": "New life starts here",
     "Церковь Филадельфия — это открытое сообщество, где каждый может найти духовную поддержку, изучение Слова Божьего и искреннее общение в духе Христовой любви.": "Philadelphia Church is an open community where everyone can find spiritual support, biblical teaching and genuine fellowship in the love of Christ.",
     "Приходите как есть.": "Come as you are.", "Адрес": "Address", "Связаться": "Contact",
+    "Время служения": "Service time", "Воскресная школа": "Sunday school", "Для детей и подростков": "For children and teenagers",
     "Мы рады каждому, кто хочет узнать больше о Боге, найти духовную поддержку и стать частью нашей церковной семьи.": "Everyone who wants to learn more about God, find spiritual support and become part of our church family is welcome.",
     "Навигация": "Navigation", "События": "Events", "Контакты": "Contact",
     "Праздник": "Celebration", "Описание": "Description", "Собираемся как семья": "We gather as a family",
@@ -184,6 +196,146 @@ const translations = {
   }
 };
 
+const additionalTranslations = {
+  ru: {},
+  nl: {
+    "Филадельфия": "Philadelphia",
+    "в движении.": "in beweging.",
+    "Лидеры": "Leiders van de",
+    "служения.": "bediening.",
+    "От детских групп и молодёжных встреч до молитвенных вечеров, евангелизаций и совместных выездов — мы растём вместе.": "Van kindergroepen en jongerenavonden tot gebedsbijeenkomsten, evangelisatie en gezamenlijke uitstapjes — we groeien samen.",
+    "Больше, чем": "Meer dan",
+    "церковь.": "een kerk.",
+    "Русскоязычная церковь «Филадельфия» в Антверпене — открытое сообщество, где каждый может найти духовную поддержку.": "De Russischtalige kerk Philadelphia in Antwerpen is een open gemeenschap waar iedereen geestelijke steun kan vinden.",
+    "Русскоязычная церковь «Филадельфия» возникла в 2001 году. Сначала мы были частью бельгийской общины, а со временем выросли в самостоятельную церковь.": "De Russischtalige kerk Philadelphia ontstond in 2001. We begonnen als onderdeel van een Belgische gemeente en groeiden in de loop der jaren uit tot een zelfstandige kerk.",
+    "Сегодня мы сохраняем тёплые, дружеские связи с нашими бельгийскими братьями и продолжаем служить людям на их родном языке.": "Vandaag onderhouden we warme, vriendschappelijke banden met onze Belgische broeders en blijven we mensen in hun eigen taal dienen.",
+    "Мы стремимся рассказывать людям об Иисусе Христе, Божьей любви и Его прощении.": "We willen mensen vertellen over Jezus Christus, Gods liefde en zijn vergeving.",
+    "Детские группы": "Kindergroepen",
+    "Помогаем детям узнавать о Боге и расти в атмосфере любви и заботы.": "We helpen kinderen God te leren kennen en op te groeien in een sfeer van liefde en zorg.",
+    "Молодёжь": "Jongeren",
+    "Встречаемся, общаемся и вместе ищем ответы на важные вопросы жизни.": "We ontmoeten elkaar, praten en zoeken samen naar antwoorden op belangrijke levensvragen.",
+    "Молитва и общение": "Gebed en ontmoeting",
+    "Проводим молитвенные вечера, евангелизации, творческие праздники и совместные выезды на природу.": "We organiseren gebedsavonden, evangelisatieactiviteiten, feestelijke bijeenkomsten en gezamenlijke uitstapjes naar de natuur.",
+    "Загружаем последние видео с канала…": "De nieuwste video's van het kanaal worden geladen…",
+    "Видео временно недоступны.": "Video's zijn tijdelijk niet beschikbaar.",
+    "Открыть канал на YouTube": "Kanaal openen op YouTube",
+    "Смотреть видео": "Video bekijken",
+    "Последние": "Laatste",
+    "Основные положения веры, на которых строится жизнь нашей церкви.": "De belangrijkste geloofspunten waarop het leven van onze kerk is gebouwd.",
+    "В основе нашего вероучения — Священное Писание: книги Ветхого и Нового Заветов. Мы верим, что Писание — Слово Божье, данное людям через авторов, вдохновлённых Святым Духом.": "De Bijbel, de boeken van het Oude en Nieuwe Testament, vormt de basis van ons geloof. We geloven dat de Bijbel het Woord van God is, aan de mensheid gegeven door schrijvers die door de Heilige Geest zijn geïnspireerd.",
+    "— Ибо пророчество никогда не произносилось по воле человека: святые Божьи люди говорили, движимые Святым Духом.": "— Want een profetie is nooit voortgekomen uit de wil van een mens; heilige mensen van God spraken, gedreven door de Heilige Geest.",
+    "— Всё Писание богодухновенно и полезно для научения, обличения, исправления и наставления в праведности.": "— Heel de Schrift is door God geïnspireerd en is nuttig om te onderwijzen, te weerleggen, te verbeteren en op te voeden in de gerechtigheid.",
+    "— Я и Отец — одно.": "— Ik en de Vader zijn één.",
+    "Мы признаём церковное предание лишь постольку, поскольку оно не противоречит Священному Писанию:": "Wij erkennen de kerkelijke traditie alleen voor zover zij niet in strijd is met de Heilige Schrift:",
+    "— «Если закон или откровение не говорят так, как это слово, то нет в них света».": "— 'Als de wet en het getuigenis niet overeenstemmen met dit woord, is er in hen geen licht.'",
+    "Мы верим в единого Бога, Который существует в трёх равносущных Лицах: Бог Отец, Бог Сын и Бог Дух Святой.": "Wij geloven in één God, die Zich openbaart in drie gelijkwaardige Personen: God de Vader, God de Zoon en God de Heilige Geest.",
+    "Мы верим, что Иисус Христос — истинный Бог и Сын Божий. Он стал истинным Человеком, родившись от Духа Святого и Девы Марии.": "Wij geloven dat Jezus Christus de ware God en de Zoon van God is. Hij werd een waar mens door de Heilige Geest en de maagd Maria.",
+    "По предвечному замыслу и предведению Божьему Сын Божий, ставший Сыном Человеческим, стал искупительной жертвой за грехи всего человечества. Ради спасения верующих в Него Он был распят при Понтии Пилате на Голгофском кресте, умер и был погребён, как предсказано в Писании.": "Volgens Gods eeuwige raad en voorkennis werd Gods Zoon, die de Mensenzoon werd, het verzoeningsoffer voor de zonden van de hele mensheid. Om hen die in Hem geloven te redden, werd Hij onder Pontius Pilatus aan het kruis op Golgotha gekruisigd, stierf Hij en werd Hij begraven, zoals in de Schrift was voorzegd.",
+    "Силой Святого Духа Он воскрес на третий день, как предсказывали пророки, и в течение сорока дней являлся Своим ученикам.": "Door de kracht van de Heilige Geest stond Hij op de derde dag op, zoals de profeten hadden voorzegd, en gedurende veertig dagen verscheen Hij aan zijn leerlingen.",
+    "На сороковой день после воскресения:": "Op de veertigste dag na zijn opstanding:",
+    "— Он был «вознесён десницей Божьей».": "— Hij werd verhoogd aan Gods rechterhand.",
+    "— Он «воссел одесную Бога».": "— Hij nam plaats aan de rechterhand van God.",
+    "На пятидесятый день после воскресения Иисус, исполнив Своё обещание, излил Святого Духа на новорождённую Церковь. Он поручил ей проповедовать Евангелие спасения всему миру, учить людей и крестить их во имя Отца, Сына и Святого Духа.": "Op de vijftigste dag na zijn opstanding vervulde Jezus zijn belofte en stortte Hij de Heilige Geest uit over de pasgeboren Kerk. Hij gaf haar de opdracht het evangelie van redding aan de hele wereld te verkondigen, mensen te onderwijzen en hen te dopen in de naam van de Vader, de Zoon en de Heilige Geest.",
+    "Мы верим в воскресение мёртвых — праведных и неправедных: одни воскреснут для Царства Бога Отца Небесного и Господа Иисуса Христа, другие — для вечного осуждения.": "Wij geloven in de opstanding van de doden, rechtvaardigen en onrechtvaardigen: de eersten voor het Koninkrijk van God de Vader en de Heer Jezus Christus, de anderen voor de eeuwige veroordeling.",
+    "Мы верим, что у великого престола Божьего состоится суд над всеми неверующими, не принявшими дар спасения во Христе Иисусе, как Он сказал:": "Wij geloven dat er bij Gods grote troon recht gesproken zal worden over allen die niet geloven en Gods redding in Christus Jezus niet hebben aanvaard, zoals Hij zei:",
+    "— «Верующий в Него не осуждается, а неверующий уже осуждён, потому что не уверовал во имя Единородного Сына Божьего».": "— 'Wie in Hem gelooft, wordt niet veroordeeld; wie niet gelooft, is al veroordeeld, omdat hij niet heeft geloofd in de naam van de eniggeboren Zoon van God.'",
+    "Мы верим в следующие положения о Церкви Господа Иисуса Христа:": "Over de Kerk van de Heer Jezus Christus geloven wij het volgende:",
+    "— Только Христос — основание Церкви.": "— Alleen Christus is het fundament van de Kerk.",
+    "— Только Он — глава Церкви.": "— Alleen Hij is het hoofd van de Kerk.",
+    "— Только через Него человек приходит к Богу; Он — единственный посредник.": "— Alleen door Hem kan een mens tot God komen; Hij is de enige bemiddelaar.",
+    "— Человек спасается, с верой принимая Божий дар прощения и спасения. Сознательно и добровольно принимая водное крещение, он становится членом Церкви Христовой.": "— Een mens wordt gered door in geloof Gods geschenk van vergeving en redding aan te nemen. Door zich bewust en vrijwillig te laten dopen in water, wordt hij lid van de Kerk van Christus.",
+    "Церковь Иисуса Христа состоит из спасённых людей, принявших водное крещение, независимо от национальности, расы, социального положения и деноминационной принадлежности.": "De Kerk van Jezus Christus bestaat uit mensen die gered zijn en de waterdoop hebben ontvangen, ongeacht hun nationaliteit, afkomst, maatschappelijke positie of kerkelijke denominatie.",
+    "2 Пет. 1:21": "2 Petr. 1:21",
+    "2 Тим. 3:16": "2 Tim. 3:16",
+    "Ин. 10:35": "Joh. 10:35",
+    "Ис. 8:20": "Jes. 8:20",
+    "Деян. 2:33": "Hand. 2:33",
+    "Евр. 10:12": "Hebr. 10:12",
+    "Ин. 3:18": "Joh. 3:18",
+    "1 Кор. 3:11": "1 Kor. 3:11",
+    "Еф. 1:22": "Ef. 1:22",
+    "Ин. 14:6; 1 Тим. 2:5": "Joh. 14:6; 1 Tim. 2:5",
+    "Еф. 2:8; Мк. 16:16; Деян. 2:41": "Ef. 2:8; Mar. 16:16; Hand. 2:41",
+    "Соответствуй тому, кто ты есть, христианин.": "Wees wie je als christen bent.",
+    "Молитвенное поклонение": "Gebed en aanbidding",
+    "Ищите славу, которая от Единого Бога": "Zoek de eer die van de enige God komt",
+    "Пожертвование для церкви": "Giften voor de kerk",
+    "Для служения детям": "Voor het kinderwerk",
+    "Kinderfond (Обет веры)": "Kinderfonds (geloofsbelofte)",
+    "церковь в Антверпене": "kerk in Antwerpen",
+    "© 2026 Церковь Филадельфия": "© 2026 Kerk Philadelphia",
+    "Антверпен, Бельгия": "Antwerpen, België",
+  },
+  en: {
+    "Филадельфия": "Philadelphia",
+    "в движении.": "in motion.",
+    "Лидеры": "Ministry",
+    "служения.": "leaders.",
+    "От детских групп и молодёжных встреч до молитвенных вечеров, евангелизаций и совместных выездов — мы растём вместе.": "From children's groups and youth gatherings to prayer evenings, outreach and trips together, we grow as a community.",
+    "Больше, чем": "More than",
+    "церковь.": "a church.",
+    "Русскоязычная церковь «Филадельфия» в Антверпене — открытое сообщество, где каждый может найти духовную поддержку.": "Philadelphia is a Russian-speaking church in Antwerp: an open community where everyone can find spiritual support.",
+    "Русскоязычная церковь «Филадельфия» возникла в 2001 году. Сначала мы были частью бельгийской общины, а со временем выросли в самостоятельную церковь.": "The Russian-speaking Philadelphia Church began in 2001. We started as part of a Belgian congregation and, over the years, grew into an independent church.",
+    "Сегодня мы сохраняем тёплые, дружеские связи с нашими бельгийскими братьями и продолжаем служить людям на их родном языке.": "Today we maintain warm, friendly ties with our Belgian brothers and continue serving people in their own language.",
+    "Мы стремимся рассказывать людям об Иисусе Христе, Божьей любви и Его прощении.": "We want to tell people about Jesus Christ, God's love and forgiveness.",
+    "Детские группы": "Children's groups",
+    "Помогаем детям узнавать о Боге и расти в атмосфере любви и заботы.": "We help children learn about God and grow in an atmosphere of love and care.",
+    "Молодёжь": "Youth",
+    "Встречаемся, общаемся и вместе ищем ответы на важные вопросы жизни.": "We meet, connect and look for answers to life's important questions together.",
+    "Молитва и общение": "Prayer and fellowship",
+    "Проводим молитвенные вечера, евангелизации, творческие праздники и совместные выезды на природу.": "We hold prayer evenings, outreach events, creative celebrations and trips into nature together.",
+    "Загружаем последние видео с канала…": "Loading the latest videos from the channel…",
+    "Видео временно недоступны.": "Videos are temporarily unavailable.",
+    "Открыть канал на YouTube": "Open the YouTube channel",
+    "Смотреть видео": "Watch video",
+    "Последние": "Latest",
+    "Основные положения веры, на которых строится жизнь нашей церкви.": "The key beliefs on which our church life is built.",
+    "В основе нашего вероучения — Священное Писание: книги Ветхого и Нового Заветов. Мы верим, что Писание — Слово Божье, данное людям через авторов, вдохновлённых Святым Духом.": "The Bible, consisting of the books of the Old and New Testaments, is the foundation of our faith. We believe it is the Word of God, given to humanity through authors inspired by the Holy Spirit.",
+    "— Ибо пророчество никогда не произносилось по воле человека: святые Божьи люди говорили, движимые Святым Духом.": "— For prophecy never came by human will; people spoke from God as they were carried along by the Holy Spirit.",
+    "— Всё Писание богодухновенно и полезно для научения, обличения, исправления и наставления в праведности.": "— All Scripture is God-breathed and is useful for teaching, rebuking, correcting and training in righteousness.",
+    "— Я и Отец — одно.": "— I and the Father are one.",
+    "Мы признаём церковное предание лишь постольку, поскольку оно не противоречит Священному Писанию:": "We recognize church tradition only insofar as it does not contradict the Holy Scriptures:",
+    "— «Если закон или откровение не говорят так, как это слово, то нет в них света».": "— “If they do not speak according to this word, they have no light.”",
+    "Мы верим в единого Бога, Который существует в трёх равносущных Лицах: Бог Отец, Бог Сын и Бог Дух Святой.": "We believe in one God, revealed in three co-equal Persons: God the Father, God the Son and God the Holy Spirit.",
+    "Мы верим, что Иисус Христос — истинный Бог и Сын Божий. Он стал истинным Человеком, родившись от Духа Святого и Девы Марии.": "We believe that Jesus Christ is the true God and the Son of God. He became truly human through the Holy Spirit and the Virgin Mary.",
+    "По предвечному замыслу и предведению Божьему Сын Божий, ставший Сыном Человеческим, стал искупительной жертвой за грехи всего человечества. Ради спасения верующих в Него Он был распят при Понтии Пилате на Голгофском кресте, умер и был погребён, как предсказано в Писании.": "According to God's eternal purpose and foreknowledge, the Son of God, who became the Son of Man, became the atoning sacrifice for the sins of all humanity. For the salvation of those who believe in Him, He was crucified under Pontius Pilate on Golgotha, died and was buried, as foretold in Scripture.",
+    "Силой Святого Духа Он воскрес на третий день, как предсказывали пророки, и в течение сорока дней являлся Своим ученикам.": "Through the power of the Holy Spirit, He rose on the third day, as the prophets foretold, and appeared to His disciples over a period of forty days.",
+    "На сороковой день после воскресения:": "On the fortieth day after His resurrection:",
+    "— Он был «вознесён десницей Божьей».": "— He was exalted at the right hand of God.",
+    "— Он «воссел одесную Бога».": "— He sat down at the right hand of God.",
+    "На пятидесятый день после воскресения Иисус, исполнив Своё обещание, излил Святого Духа на новорождённую Церковь. Он поручил ей проповедовать Евангелие спасения всему миру, учить людей и крестить их во имя Отца, Сына и Святого Духа.": "On the fiftieth day after His resurrection, Jesus fulfilled His promise and poured out the Holy Spirit on the newly formed Church. He commissioned it to preach the Gospel of salvation to the whole world, teach people and baptize them in the name of the Father, the Son and the Holy Spirit.",
+    "Мы верим в воскресение мёртвых — праведных и неправедных: одни воскреснут для Царства Бога Отца Небесного и Господа Иисуса Христа, другие — для вечного осуждения.": "We believe in the resurrection of the dead, both righteous and unrighteous: some to the Kingdom of God the Father and the Lord Jesus Christ, and others to eternal condemnation.",
+    "Мы верим, что у великого престола Божьего состоится суд над всеми неверующими, не принявшими дар спасения во Христе Иисусе, как Он сказал:": "We believe there will be judgment before God's great throne for all who have not believed and have not accepted God's gift of salvation in Christ Jesus, as He said:",
+    "— «Верующий в Него не осуждается, а неверующий уже осуждён, потому что не уверовал во имя Единородного Сына Божьего».": "— “Whoever believes in Him is not condemned, but whoever does not believe stands condemned because they have not believed in the name of God's one and only Son.”",
+    "Мы верим в следующие положения о Церкви Господа Иисуса Христа:": "We believe the following about the Church of the Lord Jesus Christ:",
+    "— Только Христос — основание Церкви.": "— Christ alone is the foundation of the Church.",
+    "— Только Он — глава Церкви.": "— He alone is the head of the Church.",
+    "— Только через Него человек приходит к Богу; Он — единственный посредник.": "— Through Him alone can a person come to God; He is the only mediator.",
+    "— Человек спасается, с верой принимая Божий дар прощения и спасения. Сознательно и добровольно принимая водное крещение, он становится членом Церкви Христовой.": "— A person is saved by accepting God's gift of forgiveness and salvation through faith. By consciously and willingly receiving water baptism, they become a member of the Church of Christ.",
+    "Церковь Иисуса Христа состоит из спасённых людей, принявших водное крещение, независимо от национальности, расы, социального положения и деноминационной принадлежности.": "The Church of Jesus Christ consists of people who have been saved and baptized in water, regardless of nationality, race, social status or denomination.",
+    "2 Пет. 1:21": "2 Pet. 1:21",
+    "2 Тим. 3:16": "2 Tim. 3:16",
+    "Ин. 10:35": "John 10:35",
+    "Ис. 8:20": "Isa. 8:20",
+    "Деян. 2:33": "Acts 2:33",
+    "Евр. 10:12": "Heb. 10:12",
+    "Ин. 3:18": "John 3:18",
+    "1 Кор. 3:11": "1 Cor. 3:11",
+    "Еф. 1:22": "Eph. 1:22",
+    "Ин. 14:6; 1 Тим. 2:5": "John 14:6; 1 Tim. 2:5",
+    "Еф. 2:8; Мк. 16:16; Деян. 2:41": "Eph. 2:8; Mark 16:16; Acts 2:41",
+    "Соответствуй тому, кто ты есть, христианин.": "Be who you are called to be as a Christian.",
+    "Молитвенное поклонение": "Prayer and worship",
+    "Ищите славу, которая от Единого Бога": "Seek the glory that comes from the only God",
+    "Пожертвование для церкви": "Church offering",
+    "Для служения детям": "For children's ministry",
+    "Kinderfond (Обет веры)": "Children's fund (Faith Promise)",
+    "церковь в Антверпене": "church in Antwerp",
+    "© 2026 Церковь Филадельфия": "© 2026 Philadelphia Church",
+    "Антверпен, Бельгия": "Antwerp, Belgium",
+  },
+};
+
 const languageNames = { ru: "RU", nl: "NL", en: "EN" };
 const savedLanguage = localStorage.getItem("philadelphia-language") || "ru";
 const languageSelect = document.createElement("select");
@@ -199,7 +351,7 @@ languageSelect.value = savedLanguage;
 document.querySelectorAll(".site-header").forEach((header) => header.insertBefore(languageSelect.cloneNode(true), header.querySelector(".menu-toggle") || header.lastElementChild));
 
 const translateTextNodes = (language) => {
-  const dictionary = translations[language];
+  const dictionary = { ...translations[language], ...additionalTranslations[language] };
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const nodes = [];
   while (walker.nextNode()) nodes.push(walker.currentNode);
@@ -208,6 +360,30 @@ const translateTextNodes = (language) => {
     if (dictionary[value]) node.nodeValue = node.nodeValue.replace(value, dictionary[value]);
   });
   document.querySelectorAll(".language-switcher").forEach((select) => { select.value = language; });
+  const attributeTranslations = {
+    "Филадельфия, на главную": { nl: "Philadelphia, naar de startpagina", en: "Philadelphia, home" },
+    "Логотип церкви Филадельфия": { nl: "Logo van kerk Philadelphia", en: "Philadelphia Church logo" },
+    "Основная навигация": { nl: "Hoofdnavigatie", en: "Main navigation" },
+    "Выбор языка": { nl: "Taalkeuze", en: "Language selection" },
+    "Открыть меню": { nl: "Menu openen", en: "Open menu" },
+    "Домашние группы": { nl: "Huiskringen", en: "Home groups" },
+    "Пресвитеры": { nl: "Ouderlingen", en: "Presbyters" },
+    "Фотография из жизни церкви": { nl: "Foto uit het kerkelijk leven", en: "Photo from church life" },
+    "Праздник жатвы": { nl: "Oogstfeest", en: "Harvest celebration" },
+    "Рождественский праздник": { nl: "Kerstviering", en: "Christmas celebration" },
+    "Воскресное богослужение": { nl: "Zondagse kerkdienst", en: "Sunday service" },
+  };
+  document.querySelectorAll("[aria-label], [alt]").forEach((element) => {
+    ["aria-label", "alt"].forEach((attribute) => {
+      const source = element.getAttribute(attribute);
+      if (source && attributeTranslations[source]?.[language]) {
+        element.setAttribute(attribute, attributeTranslations[source][language]);
+      }
+    });
+  });
+  document.querySelectorAll(".language-switcher").forEach((select) => {
+    select.setAttribute("aria-label", attributeTranslations["Выбор языка"][language] || "Выбор языка");
+  });
   document.querySelectorAll("input[placeholder], textarea[placeholder]").forEach((input) => {
     const placeholder = input.getAttribute("placeholder");
     const placeholderTranslations = {
@@ -232,6 +408,30 @@ const translateTextNodes = (language) => {
   };
   const page = location.pathname.split("/").pop() || "index.html";
   if (titles[language]?.[page]) document.title = titles[language][page];
+  const descriptions = {
+    ru: {
+      "index.html": "Церковь Филадельфия в Антверпене — место веры, надежды и живого общения.",
+      "about.html": "История и ценности церкви Филадельфия в Антверпене.",
+      "leaders.html": "Команда служителей церкви Филадельфия.",
+      "gallery.html": "Фотографии и моменты жизни церкви Филадельфия в Антверпене.",
+    },
+    nl: {
+      "index.html": "Kerk Philadelphia in Antwerpen — een plek van geloof, hoop en verbondenheid.",
+      "about.html": "De geschiedenis en waarden van kerk Philadelphia in Antwerpen.",
+      "leaders.html": "Het bedieningsteam van kerk Philadelphia.",
+      "gallery.html": "Foto's en momenten uit het leven van kerk Philadelphia in Antwerpen.",
+    },
+    en: {
+      "index.html": "Philadelphia Church in Antwerp — a place of faith, hope and fellowship.",
+      "about.html": "The history and values of Philadelphia Church in Antwerp.",
+      "leaders.html": "The ministry team of Philadelphia Church.",
+      "gallery.html": "Photos and moments from the life of Philadelphia Church in Antwerp.",
+    },
+  };
+  const description = document.querySelector('meta[name="description"]');
+  if (description && descriptions[language]?.[page]) {
+    description.setAttribute("content", descriptions[language][page]);
+  }
 };
 
 document.querySelectorAll(".language-switcher").forEach((select) => {

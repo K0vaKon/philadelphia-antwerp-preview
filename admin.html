@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="theme.css?v=home-group-fields-v8-20260928" />
+    <link rel="stylesheet" href="theme.css?v=presbyter-family-cards-v2-20260928" />
     <link rel="stylesheet" href="admin.css?v=home-group-order-v1-20260928" />
     <link rel="stylesheet" href="login.css" />
     <link rel="stylesheet" href="i18n.css" />
@@ -78,22 +78,26 @@
         <div class="section-top"><div><p class="eyebrow">Пасторская команда</p><h2>Наши<br /><span>пресвитеры.</span></h2></div></div>
         <div class="admin-layout">
           <form class="event-form" id="presbyter-form">
-            <div class="form-title"><span class="form-number">03</span><div><h2>Добавить пресвитера</h2><p>Пресвитер появится в отдельном списке на странице служений.</p></div></div>
-            <label>Имя и фамилия<input name="title" required placeholder="Например, Иван Иванов" /></label>
-            <label>Категория<input name="tag" placeholder="Пресвитер" /></label>
-            <label>Описание<textarea name="description" rows="4" required placeholder="Кратко расскажите о служении"></textarea></label>
-            <details class="translation-fields"><summary>Переводы на другие языки</summary><p>Если перевод не заполнен, посетители увидят исходный текст.</p>
-              <div class="translation-language"><strong>Nederlands</strong><label>Имя<input name="translations.nl.title" /></label><label>Категория<input name="translations.nl.tag" /></label><label>Описание<textarea name="translations.nl.description" rows="3"></textarea></label></div>
-              <div class="translation-language"><strong>English</strong><label>Имя<input name="translations.en.title" /></label><label>Категория<input name="translations.en.tag" /></label><label>Описание<textarea name="translations.en.description" rows="3"></textarea></label></div>
-            </details>
-            <label>Фото<input name="image" type="file" accept="image/*" /></label>
-            <button class="button button-dark" type="submit">Добавить пресвитера <span>↗</span></button>
+            <div class="form-title"><span class="form-number">03</span><div><h2>Добавить пресвитерскую семью</h2><p>Супруги появятся вместе в отдельном списке на странице служений.</p></div></div>
+            <fieldset class="presbyter-person-fields">
+              <legend>Муж</legend>
+              <label>Имя мужа<input name="husbandFirstName" required autocomplete="given-name" /></label>
+              <label>Фамилия мужа<input name="husbandLastName" required autocomplete="family-name" /></label>
+              <label>Фото мужа<input name="image" type="file" accept="image/*" required /></label>
+            </fieldset>
+            <fieldset class="presbyter-person-fields">
+              <legend>Жена</legend>
+              <label>Имя жены<input name="wifeFirstName" required autocomplete="given-name" /></label>
+              <label>Фамилия жены<input name="wifeLastName" required autocomplete="family-name" /></label>
+              <label>Фото жены<input name="spouseImage" type="file" accept="image/*" required /></label>
+            </fieldset>
+            <button class="button button-dark" type="submit">Добавить пресвитерскую семью <span>↗</span></button>
             <p class="form-message" id="presbyter-form-message" role="status"></p>
           </form>
         </div>
       </section>
       <section class="admin-records admin-events">
-        <div class="section-top"><div><p class="eyebrow">Управление</p><h2>Опубликованные<br /><span>пресвитеры.</span></h2></div><span class="events-count" id="presbyters-count">0 пресвитеров</span></div>
+        <div class="section-top"><div><p class="eyebrow">Управление</p><h2>Опубликованные<br /><span>пресвитерские семьи.</span></h2></div><span class="events-count" id="presbyters-count">0 пресвитерских семей</span></div>
         <div class="admin-record-list" id="admin-presbyters-list"></div>
       </section>
       </div>
@@ -146,7 +150,7 @@
         </form>
       </section>
     </main>
-    <script src="script.js?v=gallery-lightbox-v1-20260928"></script>
-    <script src="i18n.js?v=home-group-fields-v6-20260928"></script>
+    <script src="script.js?v=presbyter-families-v2-20260928"></script>
+    <script src="i18n.js?v=presbyter-families-v1-20260928"></script>
   </body>
 </html>
