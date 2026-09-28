@@ -480,6 +480,18 @@ const renderNextGalleryBatch = () => {
     image.loading = "lazy";
     image.decoding = "async";
     figure.append(image);
+    const menuTrigger = document.createElement("button");
+    menuTrigger.type = "button";
+    menuTrigger.className = "gallery-photo-menu-trigger";
+    menuTrigger.dataset.photoMenuTrigger = "";
+    menuTrigger.setAttribute("aria-label", getDynamicLabel("photoActions"));
+    menuTrigger.setAttribute("aria-haspopup", "menu");
+    menuTrigger.setAttribute("aria-expanded", "false");
+    const menuTriggerDots = document.createElement("span");
+    menuTriggerDots.className = "gallery-photo-menu-trigger-dots";
+    menuTriggerDots.setAttribute("aria-hidden", "true");
+    menuTrigger.append(menuTriggerDots);
+    figure.append(menuTrigger);
     const menu = document.createElement("div");
     menu.className = "gallery-photo-menu";
     menu.setAttribute("role", "menu");
@@ -620,6 +632,7 @@ const setupGalleryPhotoActions = () => {
 
   let activeImage = null;
   let activeMenu = null;
+  let activeMenuTrigger = null;
   let lightboxSourceImage = null;
   let pressTimer = 0;
   let pressOrigin = null;
@@ -648,23 +661,27 @@ const setupGalleryPhotoActions = () => {
   };
 
   const closeMenu = (restoreFocus = false) => {
-    const previousImage = activeImage;
+    const previousFocusTarget = activeMenuTrigger || activeImage;
     if (activeMenu) {
       activeMenu.hidden = true;
       activeMenu.closest(".gallery-photo")?.classList.remove("is-actions-open");
     }
+    activeMenuTrigger?.setAttribute("aria-expanded", "false");
     activeImage = null;
     activeMenu = null;
-    if (restoreFocus) previousImage?.focus();
+    activeMenuTrigger = null;
+    if (restoreFocus) previousFocusTarget?.focus();
   };
 
-  const showMenu = (image) => {
+  const showMenu = (image, trigger = null) => {
     const figure = image.closest(".gallery-photo");
     const menu = figure?.querySelector(".gallery-photo-menu");
     if (!(menu instanceof HTMLElement)) return;
     closeMenu();
     activeImage = image;
     activeMenu = menu;
+    activeMenuTrigger = trigger;
+    trigger?.setAttribute("aria-expanded", "true");
     figure.classList.add("is-actions-open");
     menu.setAttribute("aria-label", getDynamicLabel("photoActions"));
     menu.querySelector('[data-photo-action="download"] .gallery-photo-action-label').textContent = getDynamicLabel("downloadPhoto");
@@ -843,6 +860,14 @@ const setupGalleryPhotoActions = () => {
   });
 
   galleryList.addEventListener("click", (event) => {
+    const menuTrigger = event.target instanceof Element ? event.target.closest("[data-photo-menu-trigger]") : null;
+    if (menuTrigger instanceof HTMLButtonElement) {
+      const image = menuTrigger.closest(".gallery-photo")?.querySelector("img");
+      if (!(image instanceof HTMLImageElement)) return;
+      event.preventDefault();
+      showMenu(image, menuTrigger);
+      return;
+    }
     if (event.target === activeMenu) {
       closeMenu();
       return;
