@@ -481,6 +481,17 @@ const getDynamicLabel = (key) => {
   const labels = {
     service: { ru: "Служение", nl: "Bediening", en: "Ministry" },
     homeGroup: { ru: "Домашняя группа", nl: "Huiskring", en: "Home group" },
+    leader: { ru: "Лидер", nl: "Leider", en: "Leader" },
+    location: { ru: "Место/район", nl: "Locatie/buurt", en: "Location/area" },
+    dayOfWeek: { ru: "День недели", nl: "Dag van de week", en: "Day of the week" },
+    selectDay: { ru: "Выберите день", nl: "Kies een dag", en: "Select a day" },
+    monday: { ru: "Понедельник", nl: "Maandag", en: "Monday" },
+    tuesday: { ru: "Вторник", nl: "Dinsdag", en: "Tuesday" },
+    wednesday: { ru: "Среда", nl: "Woensdag", en: "Wednesday" },
+    thursday: { ru: "Четверг", nl: "Donderdag", en: "Thursday" },
+    friday: { ru: "Пятница", nl: "Vrijdag", en: "Friday" },
+    saturday: { ru: "Суббота", nl: "Zaterdag", en: "Saturday" },
+    sunday: { ru: "Воскресенье", nl: "Zondag", en: "Sunday" },
     presbyter: { ru: "Пресвитер", nl: "Ouderling", en: "Presbyter" },
     event: { ru: "Событие", nl: "Evenement", en: "Event" },
     remove: { ru: "Удалить", nl: "Verwijderen", en: "Delete" },
@@ -491,6 +502,7 @@ const getDynamicLabel = (key) => {
     title: { ru: "Название", nl: "Titel", en: "Title" },
     category: { ru: "Категория", nl: "Categorie", en: "Category" },
     description: { ru: "Описание", nl: "Beschrijving", en: "Description" },
+    shortDescription: { ru: "Небольшое описание", nl: "Korte beschrijving", en: "Short description" },
     date: { ru: "Дата", nl: "Datum", en: "Date" },
     time: { ru: "Время", nl: "Tijd", en: "Time" },
     image: { ru: "Фотография", nl: "Foto", en: "Photo" },
@@ -530,8 +542,8 @@ const updateAdminRecordCount = (container, count, type) => {
   if (countElement) countElement.textContent = formatAdminRecordCount(count, type);
 };
 
-const createRecordTranslations = (formData) => Object.fromEntries(contentLanguages.map((language) => {
-  const fields = Object.fromEntries(["title", "tag", "description"].map((field) => [
+const createRecordTranslations = (formData, translatableFields = ["title", "tag", "description"]) => Object.fromEntries(contentLanguages.map((language) => {
+  const fields = Object.fromEntries(translatableFields.map((field) => [
     field,
     String(formData.get(`translations.${language}.${field}`) || "").trim(),
   ]));
@@ -539,25 +551,39 @@ const createRecordTranslations = (formData) => Object.fromEntries(contentLanguag
 }).filter(([, fields]) => Object.values(fields).some(Boolean)));
 
 const recordEditorMarkup = (record, type) => {
+  const isHomeGroup = type === "homeGroup";
   const fieldLabels = {
     title: getDynamicLabel("title"),
     tag: getDynamicLabel("category"),
     description: getDynamicLabel("description"),
+    leader: getDynamicLabel("leader"),
+    location: getDynamicLabel("location"),
+    day: getDynamicLabel("dayOfWeek"),
   };
-  const sourceFields = `<fieldset><legend>${getDynamicLabel("source")}</legend>
+  const sourceFields = isHomeGroup
+    ? `<fieldset><legend>${getDynamicLabel("source")}</legend>
+      <label>${fieldLabels.leader}<input name="leader" value="${escapeHtml(record.leader || record.title || "")}" required /></label>
+      <label>${fieldLabels.location}<input name="location" value="${escapeHtml(record.location || record.tag || "")}" required /></label>
+      <label>${fieldLabels.day}${getWeekdaySelect(record.day)}</label>
+      <label>${getDynamicLabel("shortDescription")}<textarea name="description" rows="3" required>${escapeHtml(record.description || "")}</textarea></label>
+    </fieldset>`
+    : `<fieldset><legend>${getDynamicLabel("source")}</legend>
     <label>${fieldLabels.title}<input name="title" value="${escapeHtml(record.title || "")}" required /></label>
     ${type === "event" ? `<label>${getDynamicLabel("date")}<input name="date" type="date" value="${escapeHtml(record.date || "")}" required /></label><label>${getDynamicLabel("time")}<input name="time" type="time" value="${escapeHtml(formatEventTime(record.time || ""))}" required /></label>` : ""}
     <label>${fieldLabels.tag}<input name="tag" value="${escapeHtml(record.tag || "")}" /></label>
     <label>${fieldLabels.description}<textarea name="description" rows="3">${escapeHtml(record.description || "")}</textarea></label>
   </fieldset>`;
+  const translationKeys = isHomeGroup ? ["leader", "location", "description"] : ["title", "tag", "description"];
+  const translationLabels = isHomeGroup ? fieldLabels : { ...fieldLabels, description: getDynamicLabel("description") };
   const translationFields = contentLanguages.map((language) => {
     const values = record.translations?.[language] || {};
-    return `<fieldset><legend>${language === "nl" ? "Nederlands" : "English"}</legend>${["title", "tag", "description"].map((field) => {
-      const value = escapeHtml(values[field] || "");
+    return `<fieldset><legend>${language === "nl" ? "Nederlands" : "English"}</legend>${translationKeys.map((field) => {
+      const legacyField = field === "leader" ? "title" : field === "location" ? "tag" : field;
+      const value = escapeHtml(values[field] || (isHomeGroup ? values[legacyField] : "") || "");
       const input = field === "description"
         ? `<textarea name="translations.${language}.${field}">${value}</textarea>`
         : `<input name="translations.${language}.${field}" value="${value}" />`;
-      return `<label>${fieldLabels[field]}${input}</label>`;
+      return `<label>${translationLabels[field]}${input}</label>`;
     }).join("")}</fieldset>`;
   }).join("");
   return `<details class="admin-record-editor"><summary>${getDynamicLabel("editRecord")}</summary><form data-record-editor="${type}" data-record-id="${escapeHtml(record.id)}">${sourceFields}${translationFields}<label>${getDynamicLabel("image")}<input name="image" type="file" accept="image/*" /></label><img class="admin-edit-image" src="${escapeHtml(record.image || "")}" alt="${getDynamicLabel("image")}" loading="lazy" /><button class="button button-dark" type="submit">${getDynamicLabel("saveRecord")}</button><p class="record-save-message" role="status"></p></form></details>`;
@@ -578,17 +604,24 @@ const bindRecordEditors = (container, storageKey, type, render) => {
         const image = await prepareUploadedImage(formData.get("image"));
         const updatedRecord = {
           ...record,
-          title: String(formData.get("title") || "").trim(),
-          tag: String(formData.get("tag") || "").trim(),
           description: String(formData.get("description") || "").trim(),
-          translations: createRecordTranslations(formData),
+          translations: createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
           image: image || record.image,
         };
+        if (type === "homeGroup") {
+          updatedRecord.leader = String(formData.get("leader") || "").trim();
+          updatedRecord.location = String(formData.get("location") || "").trim();
+          updatedRecord.day = String(formData.get("day") || "");
+        } else {
+          updatedRecord.title = String(formData.get("title") || "").trim();
+          updatedRecord.tag = String(formData.get("tag") || "").trim();
+        }
         if (type === "event") {
           updatedRecord.date = String(formData.get("date") || "");
           updatedRecord.time = String(formData.get("time") || "");
         }
-        if (!updatedRecord.title || (type === "event" && (!updatedRecord.date || !updatedRecord.time))) {
+        if ((type === "homeGroup" && (!updatedRecord.leader || !updatedRecord.location || !updatedRecord.day || !updatedRecord.description))
+          || (type !== "homeGroup" && (!updatedRecord.title || (type === "event" && (!updatedRecord.date || !updatedRecord.time))))) {
           throw new Error("Заполните все обязательные поля.");
         }
 
@@ -615,10 +648,46 @@ const leaderCardMarkup = (leader, compact = false, fallbackLabel = "service") =>
   return `<article class="${cardClass}"><div class="${photoClass}" style="background-image:url('${escapeHtml(leader.image)}')"></div><div class="${infoClass}"><div><p>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel(fallbackLabel))}</p><h3>${escapeHtml(getLocalizedRecordField(leader, "title"))}</h3>${compact ? `<a href="${destination}">Подробнее <span>→</span></a>` : `<small>${escapeHtml(getLocalizedRecordField(leader, "description"))}</small>`}</div>${compact ? "" : "<span>↗</span>"}</div></article>`;
 };
 
+const getLocalizedHomeGroupField = (record, field) => {
+  const legacyField = field === "leader" ? "title" : field === "location" ? "tag" : "";
+  const value = record[field] || (legacyField && record[legacyField]) || "";
+  const language = getCurrentLanguage();
+  if (language === "ru") return value;
+  const translations = record.translations?.[language] || {};
+  return translations[field] || (legacyField && translations[legacyField]) || value;
+};
+
+const getWeekdaySelect = (selectedDay = "") => {
+  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  return `<select name="day" required><option value="">${getDynamicLabel("selectDay")}</option>${days.map((day) => `<option value="${day}"${day === selectedDay ? " selected" : ""}>${getDynamicLabel(day)}</option>`).join("")}</select>`;
+};
+
+const homeGroupCardMarkup = (record, compact, index) => {
+  const leader = getLocalizedHomeGroupField(record, "leader");
+  const location = getLocalizedHomeGroupField(record, "location");
+  const day = record.day ? getDynamicLabel(record.day) : "";
+  const description = getLocalizedRecordField(record, "description");
+  return `<article class="home-group-card${compact ? " home-group-card-compact" : ""}">
+    <div class="home-group-orbit" aria-hidden="true">
+      <div class="home-group-photo" style="background-image:url('${escapeHtml(record.image)}')"></div>
+      <span class="home-group-number">${String(index + 1).padStart(2, "0")}</span>
+    </div>
+    <div class="home-group-info">
+      <p class="home-group-tag">${escapeHtml(location || getDynamicLabel("homeGroup"))}</p>
+      <p class="home-group-leader-label">${getDynamicLabel("leader")}</p>
+      <h3>${escapeHtml(leader)}</h3>
+      ${day ? `<p class="home-group-day">${day}</p>` : ""}
+      ${description ? `<p class="home-group-description">${escapeHtml(description)}</p>` : ""}
+    </div>
+  </article>`;
+};
+
 const renderDirectory = (records, list, emptyLabel, type, compact = false) => {
   if (!list) return;
   list.innerHTML = records.length
-    ? records.map((record) => leaderCardMarkup(record, compact, type)).join("")
+    ? records.map((record, index) => type === "homeGroup"
+      ? homeGroupCardMarkup(record, compact, index)
+      : leaderCardMarkup(record, compact, type)).join("")
     : `<p class="directory-empty">${getDynamicLabel(emptyLabel)}</p>`;
 };
 
@@ -626,7 +695,13 @@ const renderAdminDirectory = (records, container, storageKey, type, render) => {
   if (!container) return;
   updateAdminRecordCount(container, records.length, type);
   container.innerHTML = records.length
-    ? records.map((record) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(record, "title"))}</strong><span>${escapeHtml(getLocalizedRecordField(record, "tag") || getDynamicLabel(type))}</span></div><button type="button" data-delete-record="${escapeHtml(record.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(record, type)}</article>`).join("")
+    ? records.map((record) => {
+      const title = type === "homeGroup" ? getLocalizedHomeGroupField(record, "leader") : getLocalizedRecordField(record, "title");
+      const details = type === "homeGroup"
+        ? [getLocalizedHomeGroupField(record, "location"), record.day ? getDynamicLabel(record.day) : ""].filter(Boolean).join(" · ")
+        : getLocalizedRecordField(record, "tag") || getDynamicLabel(type);
+      return `<article class="admin-event"><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(details)}</span></div><button type="button" data-delete-record="${escapeHtml(record.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(record, type)}</article>`;
+    }).join("")
     : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
   bindRecordEditors(container, storageKey, type, render);
   container.querySelectorAll("[data-delete-record]").forEach((button) => {
@@ -791,13 +866,22 @@ const bindDirectoryForm = (form, storageKey, messageId, render, type) => {
       const image = await prepareUploadedImage(formData.get("image"));
       const record = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        title: String(formData.get("title") || "").trim(),
-        tag: String(formData.get("tag") || "").trim(),
         description: String(formData.get("description") || "").trim(),
-        translations: createRecordTranslations(formData),
+        translations: createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
         image: image || "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
       };
-      if (!record.title || !record.description) throw new Error("Заполните название и описание.");
+      if (type === "homeGroup") {
+        record.leader = String(formData.get("leader") || "").trim();
+        record.location = String(formData.get("location") || "").trim();
+        record.day = String(formData.get("day") || "");
+        if (!record.leader || !record.location || !record.day || !record.description) {
+          throw new Error("Заполните имя лидера, место/район, день недели и описание.");
+        }
+      } else {
+        record.title = String(formData.get("title") || "").trim();
+        record.tag = String(formData.get("tag") || "").trim();
+        if (!record.title || !record.description) throw new Error("Заполните название и описание.");
+      }
       const successMessage = type === "homeGroup" ? getDynamicLabel("homeGroupAdded") : getDynamicLabel("presbyterAdded");
       if (saveAdminRecord(storageKey, record, message, successMessage, render)) form.reset();
     } catch (error) {

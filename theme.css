@@ -675,9 +675,138 @@
 }
 
 .horizontal-people-list > .leader-card,
-.horizontal-people-list > .leader-preview-card {
+.horizontal-people-list > .leader-preview-card,
+.horizontal-people-list > .home-group-card {
   min-width: 0;
   scroll-snap-align: start;
+}
+
+.home-group-card {
+  align-items: center;
+  background: #eaf0f7;
+  border: 1px solid rgba(20, 43, 74, .08);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  margin-top: 76px;
+  padding: 78px 18px 24px;
+  position: relative;
+  text-align: center;
+  transition: transform .2s ease;
+}
+
+.home-group-card:hover {
+  transform: translateY(-4px);
+}
+
+.home-group-orbit {
+  height: 154px;
+  left: 50%;
+  position: absolute;
+  top: -76px;
+  transform: translateX(-50%);
+  width: 154px;
+}
+
+.home-group-photo {
+  background-color: #dce6f2;
+  background-position: center;
+  background-size: cover;
+  border: 6px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 12px 28px rgba(20, 43, 74, .2);
+  height: 100%;
+  width: 100%;
+}
+
+.home-group-number {
+  align-items: center;
+  background: #f3c94f;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  bottom: 4px;
+  color: #142b4a;
+  display: flex;
+  font-size: 10px;
+  font-weight: 700;
+  height: 38px;
+  justify-content: center;
+  position: absolute;
+  right: 2px;
+  width: 38px;
+}
+
+.home-group-info {
+  max-width: 300px;
+  width: 100%;
+}
+
+.home-group-leader-label {
+  color: #64738a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  margin: 2px 0 4px;
+  text-transform: uppercase;
+}
+
+.home-group-tag {
+  background: #fff;
+  border-radius: 99px;
+  color: #b08213;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .13em;
+  margin: 0 0 8px;
+  padding: 7px 12px;
+  text-transform: uppercase;
+}
+
+.home-group-info h3 {
+  color: #142b4a;
+  font-size: 20px;
+  line-height: 1.2;
+  margin: 0 0 6px;
+}
+
+.home-group-day {
+  color: #64738a;
+  font-size: 11px;
+  margin: 0 0 8px;
+}
+
+.home-group-description {
+  color: #64738a;
+  display: -webkit-box;
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0 auto;
+  max-width: 280px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.home-group-card-compact .home-group-orbit {
+  height: 138px;
+  top: -68px;
+  width: 138px;
+}
+
+.home-group-card-compact {
+  margin-top: 68px;
+  padding: 72px 14px 20px;
+}
+
+.home-group-card-compact .home-group-info h3 {
+  font-size: 18px;
+}
+
+.home-group-card-compact .home-group-description {
+  -webkit-line-clamp: 3;
 }
 
 .directory-empty {

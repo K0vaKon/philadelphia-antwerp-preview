@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="theme.css?v=admin-record-lists-v5-20260928" />
+    <link rel="stylesheet" href="theme.css?v=home-group-fields-v8-20260928" />
     <link rel="stylesheet" href="admin.css?v=admin-record-lists-v5-20260928" />
     <link rel="stylesheet" href="login.css" />
     <link rel="stylesheet" href="i18n.css" />
@@ -54,12 +54,13 @@
         <div class="admin-layout">
           <form class="event-form" id="home-group-form">
             <div class="form-title"><span class="form-number">02</span><div><h2>Добавить домашнюю группу</h2><p>Новая группа появится в списке на странице служений.</p></div></div>
-            <label>Название<input name="title" required placeholder="Например, Домашняя группа Hoboken" /></label>
-            <label>Район или категория<input name="tag" placeholder="Например, Hoboken" /></label>
-            <label>Описание<textarea name="description" rows="4" required placeholder="Расскажите о группе"></textarea></label>
+            <label>Кто лидер<input name="leader" required placeholder="Например, Анна Иванова" /></label>
+            <label>Место/район<input name="location" required placeholder="Например, Hoboken" /></label>
+            <label>День недели<select name="day" required><option value="">Выберите день</option><option value="monday">Понедельник</option><option value="tuesday">Вторник</option><option value="wednesday">Среда</option><option value="thursday">Четверг</option><option value="friday">Пятница</option><option value="saturday">Суббота</option><option value="sunday">Воскресенье</option></select></label>
+            <label>Небольшое описание<textarea name="description" rows="4" required placeholder="Расскажите о группе"></textarea></label>
             <details class="translation-fields"><summary>Переводы на другие языки</summary><p>Если перевод не заполнен, посетители увидят исходный текст.</p>
-              <div class="translation-language"><strong>Nederlands</strong><label>Название<input name="translations.nl.title" /></label><label>Категория<input name="translations.nl.tag" /></label><label>Описание<textarea name="translations.nl.description" rows="3"></textarea></label></div>
-              <div class="translation-language"><strong>English</strong><label>Название<input name="translations.en.title" /></label><label>Категория<input name="translations.en.tag" /></label><label>Описание<textarea name="translations.en.description" rows="3"></textarea></label></div>
+              <div class="translation-language"><strong>Nederlands</strong><label>Кто лидер<input name="translations.nl.leader" /></label><label>Место/район<input name="translations.nl.location" /></label><label>Небольшое описание<textarea name="translations.nl.description" rows="3"></textarea></label></div>
+              <div class="translation-language"><strong>English</strong><label>Кто лидер<input name="translations.en.leader" /></label><label>Место/район<input name="translations.en.location" /></label><label>Небольшое описание<textarea name="translations.en.description" rows="3"></textarea></label></div>
             </details>
             <label>Фото<input name="image" type="file" accept="image/*" /></label>
             <button class="button button-dark" type="submit">Добавить домашнюю группу <span>↗</span></button>
@@ -145,7 +146,7 @@
         </form>
       </section>
     </main>
-    <script src="script.js?v=admin-record-lists-v5-20260928"></script>
-    <script src="i18n.js?v=admin-record-lists-v5-20260928"></script>
+    <script src="script.js?v=home-group-fields-v8-20260928"></script>
+    <script src="i18n.js?v=home-group-fields-v6-20260928"></script>
   </body>
 </html>
