@@ -137,7 +137,11 @@ const galleryForm = document.querySelector("#gallery-form");
 const adminGalleryList = document.querySelector("#admin-gallery-list");
 const galleryCount = document.querySelector("#gallery-count");
 const galleryFormMessage = document.querySelector("#gallery-form-message");
+const galleryLoadMoreButton = document.querySelector("#gallery-load-more");
 const galleryStorageKey = "philadelphia-gallery";
+const galleryBatchSize = 12;
+let galleryPhotos = [];
+let galleryRenderedCount = 0;
 const exportBackupButton = document.querySelector("#export-backup");
 const importBackupInput = document.querySelector("#import-backup");
 const backupMessage = document.querySelector("#backup-message");
@@ -317,15 +321,21 @@ const readGalleryPhotos = () => {
 };
 
 const renderGallery = () => {
-  const photos = readGalleryPhotos().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
   if (galleryList) {
-    galleryList.innerHTML = photos.length
-      ? photos.map((photo) => `<figure class="gallery-photo"><img src="${escapeHtml(photo.image)}" alt="Фотография из жизни церкви" loading="lazy" /></figure>`).join("")
-      : '<p class="gallery-empty">Пока в галерее нет фотографий.</p>';
+    galleryPhotos = readGalleryPhotos().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    galleryRenderedCount = 0;
+    galleryList.replaceChildren();
+
+    if (galleryPhotos.length) {
+      renderNextGalleryBatch();
+    } else {
+      galleryList.innerHTML = '<p class="gallery-empty">Пока в галерее нет фотографий.</p>';
+      if (galleryLoadMoreButton) galleryLoadMoreButton.hidden = true;
+    }
   }
 
   if (adminGalleryList) {
+    const photos = readGalleryPhotos().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const language = localStorage.getItem("philadelphia-language") || "ru";
     const photoLabel = language === "nl" ? "foto's" : language === "en" ? "photos" : "фото";
     if (galleryCount) galleryCount.textContent = `${photos.length} ${photoLabel}`;
@@ -345,6 +355,43 @@ const renderGallery = () => {
     });
   }
 };
+
+const renderNextGalleryBatch = () => {
+  if (!galleryList) return;
+
+  const nextPhotos = galleryPhotos.slice(galleryRenderedCount, galleryRenderedCount + galleryBatchSize);
+  const items = nextPhotos.map((photo) => {
+    const figure = document.createElement("figure");
+    figure.className = "gallery-photo";
+    const image = document.createElement("img");
+    image.src = photo.image;
+    image.alt = "Фотография из жизни церкви";
+    image.loading = "lazy";
+    image.decoding = "async";
+    figure.append(image);
+    return figure;
+  });
+  galleryList.append(...items);
+  galleryRenderedCount += nextPhotos.length;
+
+  if (galleryLoadMoreButton) {
+    galleryLoadMoreButton.hidden = galleryRenderedCount >= galleryPhotos.length;
+  }
+};
+
+const galleryLoadObserver = galleryLoadMoreButton && "IntersectionObserver" in window
+  ? new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) renderNextGalleryBatch();
+  }, { rootMargin: "500px 0px" })
+  : null;
+
+if (galleryLoadObserver && galleryLoadMoreButton) {
+  galleryLoadObserver.observe(galleryLoadMoreButton);
+}
+
+if (galleryLoadMoreButton) {
+  galleryLoadMoreButton.addEventListener("click", renderNextGalleryBatch);
+}
 
 const leaderCardMarkup = (leader, compact = false) => {
   const cardClass = compact ? "leader-preview-card" : "leader-card";

@@ -39,6 +39,15 @@
   text-align: center;
 }
 
+.gallery-load-more {
+  display: flex;
+  margin: 24px auto 0;
+}
+
+.gallery-load-more[hidden] {
+  display: none;
+}
+
 .admin-gallery-list-section #admin-gallery-list {
   background: #fff;
   box-shadow: 0 12px 40px rgba(20, 43, 74, .05);
