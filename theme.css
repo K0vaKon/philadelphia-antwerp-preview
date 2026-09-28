@@ -727,6 +727,10 @@
 }
 
 @media (max-width: 800px) {
+  .story {
+    padding-bottom: 112px;
+  }
+
   .beliefs .beliefs-copy {
     grid-template-columns: 1fr;
   }
