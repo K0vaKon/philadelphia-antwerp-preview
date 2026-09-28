@@ -786,7 +786,14 @@ const setupGalleryPhotoActions = () => {
 
   galleryList.addEventListener("keydown", (event) => {
     const image = event.target instanceof Element ? event.target.closest(".gallery-photo img") : null;
-    if (!(image instanceof HTMLImageElement) || (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10"))) return;
+    if (!(image instanceof HTMLImageElement)) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      closeMenu();
+      showLightbox(image);
+      return;
+    }
+    if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return;
     event.preventDefault();
     showMenu(image);
   });
@@ -821,14 +828,8 @@ const setupGalleryPhotoActions = () => {
         return;
       }
       closeMenu();
+      showLightbox(image);
     }
-  });
-
-  galleryList.addEventListener("dblclick", (event) => {
-    const image = event.target instanceof Element ? event.target.closest(".gallery-photo img") : null;
-    if (!(image instanceof HTMLImageElement)) return;
-    event.preventDefault();
-    showLightbox(image);
   });
 
   lightbox.addEventListener("click", (event) => {
