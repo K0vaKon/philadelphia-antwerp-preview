@@ -767,6 +767,10 @@
   scrollbar-width: thin;
 }
 
+#presbyters-list {
+  grid-auto-columns: minmax(220px, 27%);
+}
+
 .horizontal-people-list > .leader-card,
 .horizontal-people-list > .leader-preview-card,
 .horizontal-people-list > .home-group-card {
@@ -1161,6 +1165,10 @@
   .horizontal-people-list {
     gap: 14px;
     grid-auto-columns: minmax(230px, 78%);
+  }
+
+  #presbyters-list {
+    grid-auto-columns: minmax(210px, 70%);
   }
 
   .event-form .presbyter-person-fields {

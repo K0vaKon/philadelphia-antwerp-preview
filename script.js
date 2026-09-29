@@ -1227,6 +1227,58 @@ const renderPresbyters = () => {
   renderAdminDirectory(records, adminPresbytersList, presbyterStorageKey, "presbyter", renderPresbyters);
 };
 
+const setupPeopleListAutoScroll = (lists) => {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  lists.forEach((list) => {
+    if (!list) return;
+
+    let isHovered = false;
+    let isFocused = false;
+    let pauseUntil = 0;
+
+    const pauseAfterInteraction = () => {
+      pauseUntil = Date.now() + 6000;
+    };
+
+    list.addEventListener("pointerenter", () => { isHovered = true; });
+    list.addEventListener("pointerleave", () => { isHovered = false; });
+    list.addEventListener("focusin", () => { isFocused = true; });
+    list.addEventListener("focusout", (event) => {
+      if (!list.contains(event.relatedTarget)) isFocused = false;
+    });
+    list.addEventListener("pointerdown", pauseAfterInteraction);
+    list.addEventListener("touchstart", pauseAfterInteraction, { passive: true });
+    list.addEventListener("wheel", pauseAfterInteraction, { passive: true });
+    list.addEventListener("keydown", (event) => {
+      if (["ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"].includes(event.key)) {
+        pauseAfterInteraction();
+      }
+    });
+
+    window.setInterval(() => {
+      const firstCard = list.firstElementChild;
+      if (
+        document.hidden
+        || isHovered
+        || isFocused
+        || Date.now() < pauseUntil
+        || list.children.length < 2
+        || list.scrollWidth <= list.clientWidth + 1
+        || !firstCard
+      ) return;
+
+      const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
+      const step = firstCard.getBoundingClientRect().width + gap;
+      const atEnd = list.scrollLeft + list.clientWidth >= list.scrollWidth - 2;
+      list.scrollTo({
+        left: atEnd ? 0 : list.scrollLeft + step,
+        behavior: "smooth",
+      });
+    }, 3000);
+  });
+};
+
 const renderLeaders = () => {
   const leaders = readLeaders();
   if (leadersPageList) {
@@ -1510,5 +1562,6 @@ renderEvents();
 renderLeaders();
 renderHomeGroups();
 renderPresbyters();
+setupPeopleListAutoScroll([homeGroupsPreviewList, homeGroupsList, presbytersList]);
 renderGallery();
 setupGalleryPhotoActions();
