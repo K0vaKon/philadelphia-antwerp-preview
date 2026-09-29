@@ -178,6 +178,11 @@
   color: #5f4d1c;
 }
 
+.visit-image {
+  background-image: url("visit-worship.jpg");
+  background-position: center;
+}
+
 .visit-details span {
   color: #80691c;
 }
@@ -192,6 +197,14 @@
 
 .donations {
   border-color: #526985;
+}
+
+.footer-donations {
+  margin-top: 42px;
+}
+
+.footer-donations + .footer-bottom {
+  margin-top: 36px;
 }
 
 .videos {
@@ -1232,22 +1245,6 @@
 .belief-references strong {
   color: #142b4a;
   white-space: nowrap;
-}
-
-.beliefs .donations {
-  border-color: #cbd6e3;
-}
-
-.beliefs .donations strong {
-  color: #142b4a;
-}
-
-.beliefs .donations span {
-  color: #64738a;
-}
-
-.beliefs .donations b {
-  color: #80691c;
 }
 
 .visit-details > div:last-child {
