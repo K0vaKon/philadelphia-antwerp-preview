@@ -10,4 +10,9 @@
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "camera=(), geolocation=(), microphone=()"
+    Header always unset X-Powered-By
+</IfModule>
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
 </IfModule>

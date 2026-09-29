@@ -90,6 +90,13 @@ const showAdmin = () => {
   if (loginScreen) loginScreen.hidden = true;
   if (setupScreen) setupScreen.hidden = true;
   if (logoutButton) logoutButton.hidden = false;
+  sharedGalleryReady = loadSharedGallery(true)
+    .then(() => renderGallery())
+    .catch((error) => {
+      sharedGalleryLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общую галерею.");
+      renderGallery();
+      console.error("Не удалось загрузить общую галерею с сервера.", sharedGalleryLoadError);
+    });
 };
 
 const readRecords = (storageKey) => {
@@ -492,11 +499,14 @@ const contentLanguages = ["nl", "en"];
 const galleryBatchSize = 12;
 let galleryPhotos = [];
 let galleryRenderedCount = 0;
+let sharedGalleryPhotos = [];
+let sharedGalleryLoadError = null;
+let sharedGalleryReady = Promise.resolve();
 const exportBackupButton = document.querySelector("#export-backup");
 const importBackupInput = document.querySelector("#import-backup");
 const backupMessage = document.querySelector("#backup-message");
 const backupVersion = 1;
-const maxBackupSize = 15 * 1024 * 1024;
+const maxBackupSize = 100 * 1024 * 1024;
 const maxImageUploadSize = 15 * 1024 * 1024;
 const maxImageDimension = 1600;
 const maxStoredImageSize = 3 * 1024 * 1024;
@@ -515,12 +525,11 @@ const prepareUploadedImage = async (value) => {
   const objectUrl = URL.createObjectURL(value);
   try {
     const image = new Image();
-    image.src = objectUrl;
-    try {
-      await image.decode();
-    } catch {
-      throw new Error("Формат фото не поддерживается или файл повреждён. Попробуйте JPEG, PNG или WebP.");
-    }
+    await new Promise((resolve, reject) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", () => reject(new Error("Формат фото не поддерживается или файл повреждён. Попробуйте JPEG, PNG или WebP.")), { once: true });
+      image.src = objectUrl;
+    });
 
     if (!image.naturalWidth || !image.naturalHeight) {
       throw new Error("Не удалось прочитать изображение. Выберите другой файл.");
@@ -616,7 +625,8 @@ const normalizeGalleryBackupItems = (items) => {
     if (!photo || typeof photo !== "object" || typeof photo.id !== "string" || typeof photo.createdAt !== "string") {
       throw new Error("Некорректная запись галереи.");
     }
-    if (photo.id.length > 200 || photo.createdAt.length > 50 || !isSafeImage(photo.image)) {
+    if (photo.id.length > 100 || photo.createdAt.length > 50 || typeof photo.image !== "string"
+      || photo.image.length > maxStoredImageSize * 1.5 || !isSafeImage(photo.image)) {
       throw new Error("Некорректная фотография в резервной копии.");
     }
     if (Number.isNaN(Date.parse(photo.createdAt))) throw new Error("Некорректная дата фотографии в резервной копии.");
@@ -629,7 +639,31 @@ const normalizeDirectoryBackupItems = (items, type, storageKey) => {
   return normalizeBackupItems(items, type);
 };
 
-const createBackup = () => JSON.stringify({
+const galleryImageAsDataUrl = async (image) => {
+  if (typeof image !== "string") throw new Error("В резервной копии найдено некорректное фото.");
+  if (image.startsWith("data:image/jpeg;base64,")) return image;
+  const imageUrl = new URL(image, location.href);
+  if (imageUrl.origin !== location.origin || !imageUrl.pathname.endsWith("/api/gallery-image.php")) {
+    throw new Error("Не удалось безопасно прочитать фото галереи. Используйте резервную копию с этого сайта.");
+  }
+  const response = await fetch(imageUrl, { credentials: "same-origin", cache: "no-store" });
+  if (!response.ok) throw new Error("Не удалось скачать фотографию для резервной копии.");
+  const blob = await response.blob();
+  if (blob.type !== "image/jpeg" || blob.size > maxStoredImageSize) {
+    throw new Error("Фото галереи имеет неподдерживаемый формат или слишком большой размер.");
+  }
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("Не удалось подготовить фото для резервной копии."));
+    });
+    reader.addEventListener("error", () => reject(new Error("Не удалось прочитать фото для резервной копии.")));
+    reader.readAsDataURL(blob);
+  });
+};
+
+const createBackup = async () => JSON.stringify({
   format: "philadelphia-site-backup",
   version: backupVersion,
   exportedAt: new Date().toISOString(),
@@ -637,18 +671,31 @@ const createBackup = () => JSON.stringify({
   leaders: readLeaders(),
   homeGroups: readRecords(homeGroupStorageKey),
   presbyters: readRecords(presbyterStorageKey),
-  gallery: readGalleryPhotos(),
+  gallery: await Promise.all(readGalleryPhotos().map(async (photo) => ({
+    ...photo,
+    image: await galleryImageAsDataUrl(photo.image),
+  }))),
 }, null, 2);
 
-const downloadBackup = (automatic = false) => {
-  const blob = new Blob([createBackup()], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `philadelphia-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-  if (!automatic && backupMessage) backupMessage.textContent = "Резервная копия скачана.";
+const downloadBackup = async (automatic = false) => {
+  try {
+    const blob = new Blob([await createBackup()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `philadelphia-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (!automatic && backupMessage) backupMessage.textContent = "Резервная копия скачана.";
+    return true;
+  } catch (error) {
+    console.error("Не удалось скачать резервную копию сайта.", error);
+    if (backupMessage) {
+      backupMessage.classList.add("form-message-error");
+      backupMessage.textContent = error instanceof Error ? error.message : "Не удалось подготовить резервную копию.";
+    }
+    return false;
+  }
 };
 
 
@@ -666,12 +713,63 @@ const readLeaders = () => {
 };
 
 const readGalleryPhotos = () => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(galleryStorageKey) || "[]");
-    return Array.isArray(stored) ? stored : [];
-  } catch {
-    return [];
+  return sharedGalleryPhotos;
+};
+
+const replaceSharedGalleryPhotos = async (photos) => {
+  const desiredIds = new Set(photos.map((photo) => photo.id));
+  for (const photo of photos) {
+    const image = await galleryImageAsDataUrl(photo.image);
+    const existing = sharedGalleryPhotos.some((item) => item.id === photo.id);
+    const result = await requestApi(
+      existing ? `gallery.php?id=${encodeURIComponent(photo.id)}` : "gallery.php",
+      {
+        method: existing ? "PUT" : "POST",
+        body: JSON.stringify({ ...photo, image }),
+      },
+    );
+    if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
+    sharedGalleryPhotos = result.photos;
   }
+
+  for (const photo of [...sharedGalleryPhotos]) {
+    if (desiredIds.has(photo.id)) continue;
+    const result = await requestApi(`gallery.php?id=${encodeURIComponent(photo.id)}`, { method: "DELETE" });
+    if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
+    sharedGalleryPhotos = result.photos;
+  }
+};
+
+const loadSharedGallery = async (migrateLegacyPhotos = false) => {
+  const result = await requestApi("gallery.php");
+  if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
+  sharedGalleryPhotos = result.photos;
+  sharedGalleryLoadError = null;
+
+  if (migrateLegacyPhotos) {
+    const legacyPhotos = readRecords(galleryStorageKey);
+    const existingIds = new Set(sharedGalleryPhotos.map((photo) => photo.id));
+    const photosToMigrate = legacyPhotos.filter((photo) => !existingIds.has(photo.id));
+    for (const photo of photosToMigrate) {
+      if (typeof photo.image !== "string" || !photo.image.startsWith("data:image/jpeg;base64,")) {
+        throw new Error("В старой галерее есть фото неподдерживаемого формата. Скачайте резервную копию и обратитесь за помощью.");
+      }
+      const migrated = await requestApi("gallery.php", {
+        method: "POST",
+        body: JSON.stringify(photo),
+      });
+      if (!Array.isArray(migrated.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
+      sharedGalleryPhotos = migrated.photos;
+      existingIds.add(photo.id);
+    }
+    if (photosToMigrate.length > 0) {
+      localStorage.removeItem(galleryStorageKey);
+      if (galleryFormMessage) {
+        galleryFormMessage.textContent = `Перенесено на сервер фотографий: ${photosToMigrate.length}. Теперь они доступны всем посетителям.`;
+      }
+    }
+  }
+  return sharedGalleryPhotos;
 };
 
 const renderGallery = () => {
@@ -680,11 +778,16 @@ const renderGallery = () => {
     galleryRenderedCount = 0;
     galleryList.replaceChildren();
 
-    if (galleryPhotos.length) {
+    if (sharedGalleryLoadError) {
+      galleryList.innerHTML = `<p class="gallery-empty">${escapeHtml(sharedGalleryLoadError.message)}</p>`;
+      if (galleryLoadMoreButton) galleryLoadMoreButton.hidden = true;
+    } else if (galleryPhotos.length) {
       renderNextGalleryBatch();
+    } else if (galleryLoadMoreButton) {
+      galleryList.innerHTML = '<p class="gallery-empty">Пока в галерее нет фотографий.</p>';
+      galleryLoadMoreButton.hidden = true;
     } else {
       galleryList.innerHTML = '<p class="gallery-empty">Пока в галерее нет фотографий.</p>';
-      if (galleryLoadMoreButton) galleryLoadMoreButton.hidden = true;
     }
   }
 
@@ -693,7 +796,9 @@ const renderGallery = () => {
     const language = localStorage.getItem("philadelphia-language") || "ru";
     const photoLabel = language === "nl" ? "foto's" : language === "en" ? "photos" : "фото";
     if (galleryCount) galleryCount.textContent = `${photos.length} ${photoLabel}`;
-    adminGalleryList.innerHTML = photos.length
+    adminGalleryList.innerHTML = sharedGalleryLoadError
+      ? `<p class="admin-record-empty form-message-error">${escapeHtml(sharedGalleryLoadError.message)}</p>`
+      : photos.length
       ? photos.map((photo) => {
         const locale = language === "nl" ? "nl-BE" : language === "en" ? "en-GB" : "ru-RU";
         const date = new Date(photo.createdAt).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
@@ -702,9 +807,23 @@ const renderGallery = () => {
       : "<p>Пока нет добавленных фотографий.</p>";
 
     adminGalleryList.querySelectorAll("[data-delete-gallery-photo]").forEach((button) => {
-      button.addEventListener("click", () => {
-        localStorage.setItem(galleryStorageKey, JSON.stringify(readGalleryPhotos().filter((photo) => photo.id !== button.dataset.deleteGalleryPhoto)));
-        renderGallery();
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          const result = await requestApi(`gallery.php?id=${encodeURIComponent(button.dataset.deleteGalleryPhoto)}`, { method: "DELETE" });
+          if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
+          sharedGalleryPhotos = result.photos;
+          sharedGalleryLoadError = null;
+          renderGallery();
+        } catch (error) {
+          console.error("Не удалось удалить фотографию с сервера.", error);
+          button.disabled = false;
+          const row = button.closest(".admin-gallery-photo");
+          const message = document.createElement("p");
+          message.className = "record-save-message form-message-error";
+          message.textContent = error instanceof Error ? error.message : "Не удалось удалить фотографию.";
+          row?.append(message);
+        }
       });
     });
   }
@@ -1757,6 +1876,8 @@ if (galleryForm && galleryFormMessage) {
 
     const fileInput = galleryForm.querySelector('input[type="file"]');
     try {
+      await sharedGalleryReady;
+      if (sharedGalleryLoadError) throw sharedGalleryLoadError;
       const image = await prepareUploadedImage(fileInput?.files?.[0]);
       if (!image) throw new Error("Выберите фотографию перед добавлением.");
 
@@ -1765,9 +1886,17 @@ if (galleryForm && galleryFormMessage) {
         createdAt: new Date().toISOString(),
         image,
       };
-      if (saveAdminRecord(galleryStorageKey, photo, galleryFormMessage, "Фотография добавлена в галерею.", renderGallery)) {
-        galleryForm.reset();
-      }
+      const result = await requestApi("gallery.php", {
+        method: "POST",
+        body: JSON.stringify(photo),
+      });
+      if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
+      sharedGalleryPhotos = result.photos;
+      sharedGalleryLoadError = null;
+      renderGallery();
+      galleryForm.reset();
+      galleryFormMessage.classList.remove("form-message-error");
+      galleryFormMessage.textContent = "Фотография сохранена на сервере и теперь доступна всем посетителям.";
     } catch (error) {
       galleryFormMessage.classList.add("form-message-error");
       galleryFormMessage.textContent = error instanceof Error ? error.message : "Не удалось добавить фотографию. Проверьте файл и попробуйте снова.";
@@ -1775,7 +1904,22 @@ if (galleryForm && galleryFormMessage) {
   });
 }
 
-if (exportBackupButton) exportBackupButton.addEventListener("click", () => downloadBackup());
+if (exportBackupButton) {
+  exportBackupButton.addEventListener("click", async () => {
+    exportBackupButton.disabled = true;
+    if (backupMessage) {
+      backupMessage.classList.remove("form-message-error");
+      backupMessage.textContent = "Подготавливается резервная копия…";
+    }
+    try {
+      await sharedGalleryReady;
+      if (sharedGalleryLoadError) throw sharedGalleryLoadError;
+      await downloadBackup();
+    } finally {
+      exportBackupButton.disabled = false;
+    }
+  });
+}
 
 if (importBackupInput) {
   importBackupInput.addEventListener("change", () => {
@@ -1783,7 +1927,7 @@ if (importBackupInput) {
     importBackupInput.value = "";
     if (!file) return;
     if (file.size > maxBackupSize) {
-      if (backupMessage) backupMessage.textContent = "Файл слишком большой. Максимальный размер — 15 МБ.";
+      if (backupMessage) backupMessage.textContent = "Файл слишком большой. Максимальный размер — 100 МБ.";
       return;
     }
     const reader = new FileReader();
@@ -1797,7 +1941,9 @@ if (importBackupInput) {
         const presbyters = normalizeDirectoryBackupItems(backup.presbyters, "пресвитеров", presbyterStorageKey);
         const gallery = normalizeGalleryBackupItems(backup.gallery);
         if (!window.confirm(`Заменить текущие данные?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФотографии галереи: ${gallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
-        downloadBackup(true);
+        await sharedGalleryReady;
+        if (sharedGalleryLoadError) throw sharedGalleryLoadError;
+        if (!await downloadBackup(true)) throw new Error("Не удалось создать резервную копию перед импортом.");
         const result = await requestApi("events.php", {
           method: "PUT",
           body: JSON.stringify({ events }),
@@ -1806,7 +1952,8 @@ if (importBackupInput) {
         localStorage.setItem(leaderStorageKey, JSON.stringify(leaders));
         localStorage.setItem(homeGroupStorageKey, JSON.stringify(homeGroups));
         localStorage.setItem(presbyterStorageKey, JSON.stringify(presbyters));
-        localStorage.setItem(galleryStorageKey, JSON.stringify(gallery));
+        await replaceSharedGalleryPhotos(gallery);
+        localStorage.removeItem(galleryStorageKey);
         sharedEventsReady = loadSharedEvents();
         renderLeaders();
         renderHomeGroups();
@@ -1826,5 +1973,15 @@ renderLeaders();
 renderHomeGroups();
 renderPresbyters();
 setupPeopleListAutoScroll([homeGroupsPreviewList, homeGroupsList, presbytersList]);
-renderGallery();
+if (galleryList) {
+  sharedGalleryReady = loadSharedGallery()
+    .then(() => renderGallery())
+    .catch((error) => {
+      sharedGalleryLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общую галерею с сервера.");
+      renderGallery();
+      console.error("Не удалось загрузить общую галерею с сервера.", sharedGalleryLoadError);
+    });
+} else if (!adminGalleryList) {
+  renderGallery();
+}
 setupGalleryPhotoActions();

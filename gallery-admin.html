@@ -23,17 +23,17 @@
     <main class="admin-main" id="admin-content">
       <div class="admin-heading">
         <div><p class="eyebrow">Панель управления</p><h1>Добавить<br /><em>фото.</em></h1></div>
-        <p>Загружайте фотографии — новые будут появляться первыми в галерее.</p>
+        <p>Загружайте фотографии на сервер — после публикации их увидят все посетители.</p>
       </div>
       <div class="admin-layout gallery-management-layout">
         <form class="event-form" id="gallery-form">
           <div class="form-title"><span class="form-number">01</span><div><h2>Новое фото</h2><p>Выберите фотографию для галереи.</p></div></div>
           <label>Фотография<input name="image" type="file" accept="image/*" required /></label>
-          <p class="upload-hint">Поддерживаются JPEG, PNG, WebP и другие форматы изображений. Максимальный размер файла — 15 МБ. Фото оптимизируется перед сохранением.</p>
+          <p class="upload-hint">Поддерживаются JPEG, PNG, WebP и другие форматы изображений. Максимальный размер исходного файла — 15 МБ. Фото оптимизируется перед загрузкой на сервер.</p>
           <button class="button button-dark" type="submit">Добавить фотографию <span>↗</span></button>
           <p class="form-message" id="gallery-form-message" role="status"></p>
         </form>
-        <aside class="admin-aside"><div class="aside-card aside-light"><span class="aside-label">Как это работает</span><ol><li>Выберите фотографию</li><li>Нажмите «Добавить фотографию»</li><li>Фото сразу появится в галерее</li></ol><p>На этом статическом сайте фотографии сохраняются в браузере, где их загрузили.</p></div></aside>
+        <aside class="admin-aside"><div class="aside-card aside-light"><span class="aside-label">Как это работает</span><ol><li>Выберите фотографию</li><li>Нажмите «Добавить фотографию»</li><li>Фото появится в общей галерее</li></ol><p>Фотографии хранятся на сервере и доступны посетителям сайта.</p></div></aside>
       </div>
       <section class="admin-events admin-gallery-list-section">
         <div class="section-top"><div><p class="eyebrow">Управление</p><h2>Добавленные<br /><span>фотографии.</span></h2></div><span class="events-count" id="gallery-count">0 фотографий</span></div>
@@ -54,7 +54,7 @@
         </form>
       </section>
     </main>
-    <script src="script.js?v=shared-events-v2-20260929"></script>
-    <script src="i18n.js?v=shared-events-v2-20260929"></script>
+    <script src="script.js?v=shared-gallery-v2-20260929"></script>
+    <script src="i18n.js?v=shared-gallery-v1-20260929"></script>
   </body>
 </html>

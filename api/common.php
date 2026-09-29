@@ -61,6 +61,9 @@ function apiReadJsonBody(): array
     if ($body === false || $body === '') {
         apiRespond(400, ['error' => 'Пустой запрос.']);
     }
+    if (strlen($body) > PHILADELPHIA_MAX_REQUEST_BYTES) {
+        apiRespond(413, ['error' => 'Данные слишком большие. Уменьшите размер фотографии.']);
+    }
 
     try {
         $decoded = json_decode($body, true, 32, JSON_THROW_ON_ERROR);
