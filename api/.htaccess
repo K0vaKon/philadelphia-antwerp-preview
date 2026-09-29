@@ -1,0 +1,11 @@
+<IfModule mod_authz_core.c>
+    <FilesMatch "^(common|config)\.php$|^\.user\.ini$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^(common|config)\.php$|^\.user\.ini$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
