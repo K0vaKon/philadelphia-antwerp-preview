@@ -319,9 +319,32 @@
 
 @media (hover: none) {
   .gallery-photo-menu-trigger {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: #111;
+    height: 30px;
+    margin: 2px 4px 0 auto;
     opacity: 1;
     pointer-events: auto;
+    position: relative;
+    right: auto;
+    top: auto;
     transform: none;
+    transition: none;
+    width: 36px;
+    z-index: 3;
+  }
+
+  .gallery-photo-menu-trigger:hover,
+  .gallery-photo-menu-trigger[aria-expanded="true"] {
+    background: transparent;
+  }
+
+  .gallery-photo-menu-trigger:focus-visible {
+    outline-color: #142b4a;
   }
 }
 
