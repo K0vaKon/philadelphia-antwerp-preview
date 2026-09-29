@@ -1,0 +1,82 @@
+name: Deploy site to hosting
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the site
+        uses: actions/checkout@v4
+
+      - name: Install PHP CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes php-cli
+
+      - name: Check JavaScript and PHP syntax
+        run: |
+          node --check script.js
+          node --check i18n.js
+          find api -type f -name '*.php' -print0 | xargs -0 -r -n1 php -l
+
+      - name: Upload site over explicit FTPS
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_DIR: ${{ secrets.FTP_REMOTE_DIR }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+        run: |
+          set -euo pipefail
+          : "${FTP_HOST:?Add FTP_HOST in repository Actions secrets}"
+          : "${FTP_USERNAME:?Add FTP_USERNAME in repository Actions secrets}"
+          : "${FTP_PASSWORD:?Add FTP_PASSWORD in repository Actions secrets}"
+          : "${FTP_REMOTE_DIR:?Add FTP_REMOTE_DIR in repository Actions secrets}"
+          FTP_PORT="${FTP_PORT:-21}"
+          remote_dir="${FTP_REMOTE_DIR#/}"
+          remote_dir="${remote_dir%/}"
+          if [[ "$remote_dir" == *".."* ]]; then
+            echo "FTP_REMOTE_DIR must not contain '..'."
+            exit 1
+          fi
+          remote_base="ftp://${FTP_HOST}:${FTP_PORT}"
+          if [[ -n "$remote_dir" ]]; then
+            remote_base="${remote_base}/${remote_dir}"
+          fi
+
+          while IFS= read -r -d '' path; do
+            case "$path" in
+              .github/*|.gitignore|README.md|scripts/*|backups/*|archive/*)
+                continue
+                ;;
+              api/storage/.htaccess|api/storage/index.html)
+                ;;
+              api/storage/*)
+                continue
+                ;;
+            esac
+
+            echo "Uploading ${path}"
+            curl \
+              --fail \
+              --silent \
+              --show-error \
+              --ssl-reqd \
+              --ftp-pasv \
+              --ftp-create-dirs \
+              --retry 3 \
+              --connect-timeout 20 \
+              --max-time 120 \
+              --user "${FTP_USERNAME}:${FTP_PASSWORD}" \
+              --upload-file "$path" \
+              "${remote_base}/${path}"
+          done < <(git ls-files -z)

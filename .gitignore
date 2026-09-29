@@ -3,3 +3,6 @@
 /hero-worship.jpg
 /hero-worship-alt.jpg
 /hero-worship-generated.jpg
+/api/storage/*
+!/api/storage/.htaccess
+!/api/storage/index.html

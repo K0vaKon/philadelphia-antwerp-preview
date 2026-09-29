@@ -12,11 +12,34 @@ const adminContent = document.querySelector("#admin-content");
 const loginScreen = document.querySelector("#login-screen");
 const loginForm = document.querySelector("#login-form");
 const logoutButton = document.querySelector("#logout-button");
-const adminSessionKey = "philadelphia-admin-auth";
-const adminNavigationKey = "philadelphia-admin-navigation";
-const adminPassword = "admin";
+const setupScreen = document.querySelector("#setup-screen");
+const setupForm = document.querySelector("#setup-form");
+let adminCsrfToken = "";
 const adminTabs = document.querySelector("[data-admin-tabs]");
 const adminTabStorageKey = "philadelphia-admin-active-tab";
+const requestApi = async (endpoint, options = {}) => {
+  const method = options.method || "GET";
+  const headers = new Headers(options.headers || {});
+  headers.set("Accept", "application/json");
+  if (options.body !== undefined) headers.set("Content-Type", "application/json");
+  if (method !== "GET" && adminCsrfToken) headers.set("X-CSRF-Token", adminCsrfToken);
+
+  const response = await fetch(`api/${endpoint}`, {
+    ...options,
+    method,
+    headers,
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  let payload;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    throw new Error(`Сервер вернул некорректный ответ (${response.status}). Проверьте, что на хостинге включён PHP.`);
+  }
+  if (!response.ok) throw new Error(payload.error || `Ошибка сервера: ${response.status}`);
+  return payload;
+};
 
 if (adminTabs) {
   const tabs = [...adminTabs.querySelectorAll("[data-admin-tab]")];
@@ -65,6 +88,7 @@ if (adminTabs) {
 const showAdmin = () => {
   if (adminContent) adminContent.hidden = false;
   if (loginScreen) loginScreen.hidden = true;
+  if (setupScreen) setupScreen.hidden = true;
   if (logoutButton) logoutButton.hidden = false;
 };
 
@@ -78,58 +102,96 @@ const readRecords = (storageKey) => {
 };
 
 if (adminContent && loginScreen) {
-  sessionStorage.removeItem(adminNavigationKey);
-  if (sessionStorage.getItem(adminSessionKey) === "true") {
-    showAdmin();
-  } else {
-    adminContent.hidden = true;
-    loginScreen.hidden = false;
-    if (logoutButton) logoutButton.hidden = true;
-  }
+  adminContent.hidden = true;
+  loginScreen.hidden = true;
+  if (setupScreen) setupScreen.hidden = true;
+  if (logoutButton) logoutButton.hidden = true;
+
+  requestApi("auth.php")
+    .then((session) => {
+      adminCsrfToken = session.csrfToken || "";
+      if (session.authenticated) {
+        showAdmin();
+      } else if (session.configured) {
+        loginScreen.hidden = false;
+      } else if (setupScreen) {
+        setupScreen.hidden = false;
+      }
+    })
+    .catch((error) => {
+      loginScreen.hidden = false;
+      const loginError = document.querySelector("#login-error");
+      if (loginError) {
+        loginError.textContent = `Серверная админка недоступна. ${error.message}`;
+        loginError.classList.add("form-message-error");
+      }
+      console.error("Не удалось проверить серверный сеанс администратора.", error);
+    });
 }
 
 if (loginForm) {
-  loginForm.addEventListener("submit", (event) => {
+  loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const passwordInput = document.querySelector("#admin-password");
     const error = document.querySelector("#login-error");
-    if (passwordInput.value === adminPassword) {
-      sessionStorage.setItem(adminSessionKey, "true");
+    error.textContent = "";
+    error.classList.remove("form-message-error");
+    const submitButton = loginForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    try {
+      const session = await requestApi("auth.php", {
+        method: "POST",
+        body: JSON.stringify({ password: passwordInput.value }),
+      });
+      adminCsrfToken = session.csrfToken;
       showAdmin();
-      return;
+    } catch (requestError) {
+      error.textContent = requestError instanceof Error ? requestError.message : "Не удалось войти в админку.";
+      passwordInput.select();
+    } finally {
+      submitButton.disabled = false;
     }
-    error.textContent = "Неверный пароль. Попробуйте ещё раз.";
-    passwordInput.select();
+  });
+}
+
+if (setupForm) {
+  setupForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const error = document.querySelector("#setup-error");
+    const setupCode = document.querySelector("#setup-code");
+    const newPassword = document.querySelector("#new-admin-password");
+    const submitButton = setupForm.querySelector('button[type="submit"]');
+    error.textContent = "";
+    submitButton.disabled = true;
+    try {
+      const session = await requestApi("auth.php", {
+        method: "POST",
+        body: JSON.stringify({ setupCode: setupCode.value, newPassword: newPassword.value }),
+      });
+      adminCsrfToken = session.csrfToken;
+      setupCode.value = "";
+      newPassword.value = "";
+      showAdmin();
+    } catch (requestError) {
+      error.textContent = requestError instanceof Error ? requestError.message : "Не удалось создать пароль администратора.";
+    } finally {
+      submitButton.disabled = false;
+    }
   });
 }
 
 if (logoutButton) {
-  logoutButton.addEventListener("click", () => {
-    sessionStorage.removeItem(adminSessionKey);
-    window.location.reload();
-  });
-}
-
-if (adminContent && loginScreen) {
-  window.addEventListener("pagehide", () => {
-    if (sessionStorage.getItem(adminNavigationKey) !== "true") {
-      sessionStorage.removeItem(adminSessionKey);
+  logoutButton.addEventListener("click", async () => {
+    logoutButton.disabled = true;
+    try {
+      await requestApi("auth.php", { method: "DELETE" });
+      adminCsrfToken = "";
+      window.location.reload();
+    } catch (error) {
+      console.error("Не удалось завершить серверный сеанс.", error);
+      window.alert(error instanceof Error ? error.message : "Не удалось выйти из админки.");
+      logoutButton.disabled = false;
     }
-    sessionStorage.removeItem(adminNavigationKey);
-  });
-
-  document.querySelectorAll("a[href]").forEach((link) => {
-    link.addEventListener("click", () => {
-      const destination = link.getAttribute("href");
-      if (destination && !destination.startsWith("#")) {
-        const destinationPage = new URL(destination, window.location.href).pathname.split("/").pop();
-        if (destinationPage === "admin.html" || destinationPage === "gallery-admin.html") {
-          sessionStorage.setItem(adminNavigationKey, "true");
-          return;
-        }
-        sessionStorage.removeItem(adminSessionKey);
-      }
-    });
   });
 }
 
@@ -153,6 +215,157 @@ const videosContainer = document.querySelector("#latest-videos");
 const pageLanguage = ["ru", "nl", "en"].includes(localStorage.getItem("philadelphia-language"))
   ? localStorage.getItem("philadelphia-language")
   : "ru";
+
+const pageVisibilityPages = {
+  about: {
+    file: "about.html",
+    label: { ru: "О нас", nl: "Over ons", en: "About us" },
+  },
+  leaders: {
+    file: "leaders.html",
+    label: { ru: "Служения", nl: "Bedieningen", en: "Ministries" },
+  },
+  gallery: {
+    file: "gallery.html",
+    label: { ru: "Галерея", nl: "Galerij", en: "Gallery" },
+  },
+};
+const pageVisibilityDraftKey = "philadelphia-page-visibility-draft";
+const pageVisibilityMessages = {
+  downloaded: {
+    ru: "Файл скачан. Замените им page-visibility.json в корневой папке сайта, чтобы применить изменения для всех посетителей.",
+    nl: "Bestand gedownload. Vervang hiermee page-visibility.json in de hoofdmap van de website om de wijzigingen voor alle bezoekers toe te passen.",
+    en: "File downloaded. Replace page-visibility.json in the website root folder to apply the changes for all visitors.",
+  },
+  error: {
+    ru: "Не удалось подготовить файл настроек. Попробуйте ещё раз.",
+    nl: "Het instellingenbestand kon niet worden voorbereid. Probeer het opnieuw.",
+    en: "Could not prepare the settings file. Please try again.",
+  },
+};
+const normalizePageVisibility = (value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Некорректный формат настроек видимости страниц.");
+  }
+  return Object.fromEntries(Object.keys(pageVisibilityPages).map((key) => {
+    const isVisible = value[key] ?? true;
+    if (typeof isVisible !== "boolean") {
+      throw new Error(`Некорректное значение видимости страницы: ${key}`);
+    }
+    return [key, isVisible];
+  }));
+};
+
+const initializePageVisibility = async () => {
+  const isAdminPage = document.body.classList.contains("admin-page");
+  const visibilityList = document.querySelector("#page-visibility-list");
+  const downloadButton = document.querySelector("#download-page-visibility");
+  const statusMessage = document.querySelector("#page-visibility-message");
+  if (isAdminPage && !visibilityList) return;
+  const pageVisibilityStylesheet = document.createElement("link");
+  pageVisibilityStylesheet.rel = "stylesheet";
+  pageVisibilityStylesheet.href = "page-visibility.css?v=page-visibility-v1";
+  document.head.append(pageVisibilityStylesheet);
+
+  let publishedVisibility = Object.fromEntries(Object.keys(pageVisibilityPages).map((key) => [key, true]));
+  try {
+    const response = await fetch("page-visibility.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Не удалось загрузить page-visibility.json: HTTP ${response.status}`);
+    publishedVisibility = normalizePageVisibility(await response.json());
+  } catch (error) {
+    console.error("Настройки видимости страниц не загружены; все страницы оставлены доступными.", error);
+  }
+
+  if (isAdminPage && visibilityList && downloadButton && statusMessage) {
+    let draft = publishedVisibility;
+    try {
+      const savedDraft = localStorage.getItem(pageVisibilityDraftKey);
+      if (savedDraft) draft = normalizePageVisibility(JSON.parse(savedDraft));
+    } catch (error) {
+      console.error("Черновик видимости страниц повреждён; загружены опубликованные настройки.", error);
+    }
+
+    const saveDraft = () => {
+      draft = Object.fromEntries([...visibilityList.querySelectorAll("[data-page-visibility]")].map((input) => [
+        input.dataset.pageVisibility,
+        input.checked,
+      ]));
+      localStorage.setItem(pageVisibilityDraftKey, JSON.stringify(draft));
+      statusMessage.textContent = "";
+    };
+
+    visibilityList.replaceChildren(...Object.entries(pageVisibilityPages).map(([key, page]) => {
+      const label = document.createElement("label");
+      label.className = "page-visibility-option";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = draft[key];
+      input.dataset.pageVisibility = key;
+      input.addEventListener("change", saveDraft);
+      const name = document.createElement("span");
+      name.textContent = page.label[pageLanguage];
+      label.append(input, name);
+      return label;
+    }));
+
+    downloadButton.addEventListener("click", () => {
+      try {
+        saveDraft();
+        const file = new Blob([`${JSON.stringify(draft, null, 2)}\n`], { type: "application/json" });
+        const url = URL.createObjectURL(file);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "page-visibility.json";
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        statusMessage.textContent = pageVisibilityMessages.downloaded[pageLanguage];
+      } catch (error) {
+        console.error("Не удалось скачать настройки видимости страниц.", error);
+        statusMessage.textContent = pageVisibilityMessages.error[pageLanguage];
+      }
+    });
+    return;
+  }
+  if (isAdminPage) return;
+
+  const currentPage = Object.entries(pageVisibilityPages).find(([, page]) => page.file === location.pathname.split("/").pop());
+  if (currentPage && !publishedVisibility[currentPage[0]]) {
+    const main = document.querySelector("main");
+    if (main) {
+      const messages = {
+        ru: ["Эта страница пока готовится", "Загляните позже — мы скоро обновим её.", "На главную"],
+        nl: ["Deze pagina wordt voorbereid", "Kom later terug — we werken deze pagina binnenkort bij.", "Naar de startpagina"],
+        en: ["This page is being prepared", "Please check back later — we will update this page soon.", "Home"],
+      };
+      const [title, description, home] = messages[pageLanguage];
+      const notice = document.createElement("section");
+      notice.className = "page-unavailable";
+      const heading = document.createElement("h1");
+      heading.textContent = title;
+      const text = document.createElement("p");
+      text.textContent = description;
+      const link = document.createElement("a");
+      link.href = "index.html";
+      link.textContent = home;
+      notice.append(heading, text, link);
+      main.replaceChildren(notice);
+    }
+  }
+
+  document.querySelectorAll("a[href]").forEach((link) => {
+    let destination;
+    try {
+      destination = new URL(link.href, location.href).pathname.split("/").pop();
+    } catch (error) {
+      console.error("Не удалось определить адрес ссылки при настройке видимости страниц.", error);
+      return;
+    }
+    const hiddenPage = Object.entries(pageVisibilityPages).find(([key, page]) => page.file === destination && !publishedVisibility[key]);
+    if (hiddenPage) link.hidden = true;
+  });
+};
+
+initializePageVisibility();
 
 if (videosContainer) {
   fetch("latest-videos.json")
@@ -251,7 +464,10 @@ if (videosContainer) {
 const eventsList = document.querySelector("#events-list");
 const adminEventsList = document.querySelector("#admin-events-list");
 const eventForm = document.querySelector("#event-form");
-const eventStorageKey = "philadelphia-events";
+let sharedEvents = [];
+let sharedEventsLoadError = null;
+let sharedEventsLoaded = false;
+let sharedEventsReady = Promise.resolve(false);
 const leadersPageList = document.querySelector("#leaders-page-list");
 const adminLeadersList = document.querySelector("#admin-leaders-list");
 const leaderForm = document.querySelector("#leader-form");
@@ -437,12 +653,7 @@ const downloadBackup = (automatic = false) => {
 
 
 const readEvents = () => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(eventStorageKey) || "[]");
-    return Array.isArray(stored) ? stored : [];
-  } catch {
-    return [];
-  }
+  return sharedEvents;
 };
 
 const readLeaders = () => {
@@ -1028,7 +1239,9 @@ const bindRecordEditors = (container, storageKey, type, render) => {
       submitEvent.preventDefault();
       const message = form.querySelector(".record-save-message");
       try {
-        const records = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        const records = type === "event"
+          ? readEvents()
+          : JSON.parse(localStorage.getItem(storageKey) || "[]");
         if (!Array.isArray(records)) throw new Error("Сохранённые записи имеют неверный формат.");
         const record = records.find((item) => item.id === form.dataset.recordId);
         if (!record) throw new Error("Запись не найдена. Обновите страницу и попробуйте снова.");
@@ -1071,8 +1284,16 @@ const bindRecordEditors = (container, storageKey, type, render) => {
           throw new Error("Заполните все обязательные поля.");
         }
 
-        const updatedRecords = records.map((item) => item.id === updatedRecord.id ? updatedRecord : item);
-        localStorage.setItem(storageKey, JSON.stringify(updatedRecords));
+        if (type === "event") {
+          const result = await requestApi(`events.php?id=${encodeURIComponent(updatedRecord.id)}`, {
+            method: "PUT",
+            body: JSON.stringify(updatedRecord),
+          });
+          sharedEvents = result.events;
+        } else {
+          const updatedRecords = records.map((item) => item.id === updatedRecord.id ? updatedRecord : item);
+          localStorage.setItem(storageKey, JSON.stringify(updatedRecords));
+        }
         render();
         const updatedForm = [...container.querySelectorAll("form[data-record-editor]")]
           .find((item) => item.dataset.recordId === updatedRecord.id);
@@ -1346,7 +1567,9 @@ const renderEvents = () => {
   if (eventsList) {
     eventsList.innerHTML = "";
 
-    if (!events.length) {
+    if (sharedEventsLoadError) {
+      eventsList.innerHTML = `<div class="event-empty">${escapeHtml(pageLanguage === "nl" ? "Evenementen konden niet van de server worden geladen. Probeer het later opnieuw." : pageLanguage === "en" ? "Events could not be loaded from the server. Please try again later." : "События не удалось загрузить с сервера. Попробуйте позже.")}</div>`;
+    } else if (!events.length) {
       eventsList.innerHTML = `<div class="event-empty">${getDynamicLabel("noEvents")}</div>`;
     } else {
       events.forEach((event) => {
@@ -1362,19 +1585,49 @@ const renderEvents = () => {
   if (adminEventsList) {
     const allEvents = readEvents().sort(compareEventsByDate);
     updateAdminRecordCount(adminEventsList, allEvents.length, "event");
-    adminEventsList.innerHTML = allEvents.length
+    adminEventsList.innerHTML = sharedEventsLoadError
+      ? `<p class="admin-record-empty form-message-error">${escapeHtml(sharedEventsLoadError.message)}</p>`
+      : allEvents.length
       ? allEvents.map((event) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(event, "title"))}</strong><span>${escapeHtml(event.date)} · ${escapeHtml(formatEventTime(event.time))}</span></div><button type="button" data-delete-event="${escapeHtml(event.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(event, "event")}</article>`).join("")
       : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
 
-    bindRecordEditors(adminEventsList, eventStorageKey, "event", renderEvents);
+    bindRecordEditors(adminEventsList, null, "event", renderEvents);
     adminEventsList.querySelectorAll("[data-delete-event]").forEach((button) => {
-      button.addEventListener("click", () => {
-        localStorage.setItem(eventStorageKey, JSON.stringify(readEvents().filter((event) => event.id !== button.dataset.deleteEvent)));
-        renderEvents();
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          const result = await requestApi(`events.php?id=${encodeURIComponent(button.dataset.deleteEvent)}`, { method: "DELETE" });
+          sharedEvents = result.events;
+          renderEvents();
+        } catch (error) {
+          console.error("Не удалось удалить событие на сервере.", error);
+          button.disabled = false;
+          const row = button.closest(".admin-event");
+          const message = document.createElement("p");
+          message.className = "record-save-message form-message-error";
+          message.textContent = error instanceof Error ? error.message : "Не удалось удалить событие.";
+          row?.append(message);
+        }
       });
     });
   }
 
+};
+
+const loadSharedEvents = async () => {
+  try {
+    const result = await requestApi("events.php");
+    if (!Array.isArray(result.events)) throw new Error("Сервер вернул некорректный список событий.");
+    sharedEvents = result.events;
+    sharedEventsLoadError = null;
+    sharedEventsLoaded = true;
+  } catch (error) {
+    sharedEventsLoadError = error instanceof Error ? error : new Error("Не удалось загрузить события с сервера.");
+    sharedEventsLoaded = false;
+    console.error("Не удалось загрузить общие события с сервера.", sharedEventsLoadError);
+  }
+  renderEvents();
+  return sharedEventsLoaded;
 };
 
 if (leaderForm) {
@@ -1469,6 +1722,9 @@ if (eventForm) {
 
     const formData = new FormData(eventForm);
     try {
+      if (!await sharedEventsReady && !await loadSharedEvents()) {
+        throw sharedEventsLoadError || new Error("Не удалось подключиться к серверу событий.");
+      }
       const image = await prepareUploadedImage(formData.get("image"));
       const event = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -1480,9 +1736,12 @@ if (eventForm) {
         translations: createRecordTranslations(formData),
         image: image || "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&w=900&q=80",
       };
-      if (saveAdminRecord(eventStorageKey, event, messageElement, "Событие опубликовано на главной странице.", renderEvents)) {
-        eventForm.reset();
-      }
+      const result = await requestApi("events.php", { method: "POST", body: JSON.stringify(event) });
+      sharedEvents = result.events;
+      renderEvents();
+      messageElement.classList.remove("form-message-error");
+      messageElement.textContent = "Событие опубликовано для всех посетителей.";
+      eventForm.reset();
     } catch (error) {
       messageElement.classList.add("form-message-error");
       messageElement.textContent = error instanceof Error ? error.message : "Не удалось создать событие. Проверьте фото и попробуйте снова.";
@@ -1528,7 +1787,7 @@ if (importBackupInput) {
       return;
     }
     const reader = new FileReader();
-    reader.addEventListener("load", () => {
+    reader.addEventListener("load", async () => {
       try {
         const backup = JSON.parse(String(reader.result));
         if (backup.format !== "philadelphia-site-backup" || backup.version !== backupVersion) throw new Error("Файл создан в несовместимом формате.");
@@ -1539,12 +1798,16 @@ if (importBackupInput) {
         const gallery = normalizeGalleryBackupItems(backup.gallery);
         if (!window.confirm(`Заменить текущие данные?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФотографии галереи: ${gallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
         downloadBackup(true);
-        localStorage.setItem(eventStorageKey, JSON.stringify(events));
+        const result = await requestApi("events.php", {
+          method: "PUT",
+          body: JSON.stringify({ events }),
+        });
+        sharedEvents = result.events;
         localStorage.setItem(leaderStorageKey, JSON.stringify(leaders));
         localStorage.setItem(homeGroupStorageKey, JSON.stringify(homeGroups));
         localStorage.setItem(presbyterStorageKey, JSON.stringify(presbyters));
         localStorage.setItem(galleryStorageKey, JSON.stringify(gallery));
-        renderEvents();
+        sharedEventsReady = loadSharedEvents();
         renderLeaders();
         renderHomeGroups();
         renderPresbyters();
@@ -1558,7 +1821,7 @@ if (importBackupInput) {
   });
 }
 
-renderEvents();
+sharedEventsReady = loadSharedEvents();
 renderLeaders();
 renderHomeGroups();
 renderPresbyters();

@@ -1,0 +1,48 @@
+.page-visibility-option input[hidden],
+a[hidden] {
+  display: none !important;
+}
+
+.page-unavailable {
+  align-items: flex-start;
+  background: #f4f2ec;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 auto;
+  min-height: 48vh;
+  padding: 72px max(7vw, 24px);
+}
+
+.page-unavailable h1 {
+  color: #17345a;
+  font-family: var(--serif);
+  font-size: clamp(38px, 6vw, 68px);
+  line-height: 1.08;
+  margin: 0;
+  max-width: 760px;
+}
+
+.page-unavailable p {
+  color: #68736d;
+  font-size: 17px;
+  margin: 20px 0 26px;
+}
+
+.page-unavailable a {
+  background: #17345a;
+  color: #fff;
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 15px 22px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+  .page-unavailable {
+    min-height: 55vh;
+    padding: 56px 24px;
+  }
+}

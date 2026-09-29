@@ -1,0 +1,6 @@
+<?php
+declare(strict_types=1);
+
+const PHILADELPHIA_SETUP_CODE_SHA256 = '3ba2d1efdee5aa75166290cc05c6b037853870d3bc0246e733a47900a4a1dd02';
+const PHILADELPHIA_API_STORAGE = __DIR__ . '/storage';
+const PHILADELPHIA_MAX_REQUEST_BYTES = 20 * 1024 * 1024;

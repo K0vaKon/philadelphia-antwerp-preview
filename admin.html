@@ -9,8 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="theme.css?v=presbyter-family-cards-v2-20260928" />
-    <link rel="stylesheet" href="admin.css?v=home-group-order-v1-20260928" />
-    <link rel="stylesheet" href="login.css" />
+    <link rel="stylesheet" href="admin.css?v=page-visibility-v3-20260929" />
+    <link rel="stylesheet" href="login.css?v=shared-events-v1-20260929" />
     <link rel="stylesheet" href="i18n.css" />
   </head>
   <body class="admin-page">
@@ -25,6 +25,7 @@
         <button type="button" role="tab" id="admin-tab-groups" aria-controls="admin-panel-groups" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-groups">Домашние группы</button>
         <button type="button" role="tab" id="admin-tab-presbyters" aria-controls="admin-panel-presbyters" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-presbyters">Пресвитеры</button>
         <button type="button" role="tab" id="admin-tab-leaders" aria-controls="admin-panel-leaders" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-leaders">Лидеры служения</button>
+        <button type="button" role="tab" id="admin-tab-pages" aria-controls="admin-panel-pages" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-pages">Страницы сайта</button>
         <button type="button" role="tab" id="admin-tab-backup" aria-controls="admin-panel-backup" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-backup">Резервная копия</button>
       </nav>
       <div class="admin-tab-panel" id="admin-panel-events" role="tabpanel" aria-labelledby="admin-tab-events" data-admin-panel>
@@ -123,11 +124,23 @@
       </section>
       <section class="admin-records admin-events"><div class="section-top"><div><p class="eyebrow">Управление</p><h2>Опубликованные<br /><span>лидеры служения.</span></h2></div><span class="events-count" id="leaders-count">0 лидеров</span></div><div class="admin-record-list" id="admin-leaders-list"></div></section>
       </div>
+      <div class="admin-tab-panel" id="admin-panel-pages" role="tabpanel" aria-labelledby="admin-tab-pages" data-admin-panel hidden>
+        <section class="admin-page-visibility admin-events">
+          <div class="section-top"><div><p class="eyebrow">Публикация</p><h2>Видимость<br /><span>страниц сайта.</span></h2></div></div>
+          <div class="page-visibility-card">
+            <p>Выберите страницы, которые должны быть доступны посетителям.</p>
+            <p>Чтобы изменения увидели все, скачайте файл настроек и замените им page-visibility.json в корневой папке сайта. Для GitHub Pages отправьте этот файл в репозиторий.</p>
+            <div class="page-visibility-list" id="page-visibility-list"></div>
+            <button class="button button-dark" id="download-page-visibility" type="button">Скачать настройки страниц <span>↓</span></button>
+            <p class="form-message" id="page-visibility-message" role="status"></p>
+          </div>
+        </section>
+      </div>
       <div class="admin-tab-panel" id="admin-panel-backup" role="tabpanel" aria-labelledby="admin-tab-backup" data-admin-panel hidden>
       <section class="admin-backup admin-events">
         <div class="section-top"><div><p class="eyebrow">Перенос и защита</p><h2>Резервная<br /><span>копия.</span></h2></div></div>
         <div class="backup-card">
-          <p>Скачайте события, лидеров, домашние группы, пресвитеров и фотографии галереи одним файлом. Его можно сохранить и позже импортировать на сервер.</p>
+          <p>Резервная копия содержит общие события сервера и остальные записи этого браузера. Импорт загружает события на сервер; лидеры, группы, пресвитеры и фотографии восстанавливаются в этом браузере.</p>
           <div class="backup-actions">
             <button class="button button-dark" id="export-backup" type="button">Скачать резервную копию <span>↓</span></button>
             <label class="backup-import-button">Восстановить из файла<input id="import-backup" type="file" accept="application/json,.json" /></label>
@@ -150,7 +163,21 @@
         </form>
       </section>
     </main>
-    <script src="script.js?v=presbyter-families-v2-20260928"></script>
-    <script src="i18n.js?v=presbyter-families-v1-20260928"></script>
+    <main class="login-main" id="setup-screen" hidden>
+      <section class="login-card">
+        <img class="login-logo" src="logo.png" alt="Логотип церкви Филадельфия" />
+        <p class="eyebrow">Первый запуск</p>
+        <h1>Создайте пароль<br /><em>администратора.</em></h1>
+        <p>Одноразовый код находится в отдельном файле, переданном вместе с комплектом сайта. После настройки удалите этот файл.</p>
+        <form id="setup-form">
+          <label>Одноразовый код<input id="setup-code" type="password" autocomplete="off" required /></label>
+          <label>Новый пароль<input id="new-admin-password" type="password" autocomplete="new-password" minlength="12" required /></label>
+          <button class="button button-dark" type="submit">Создать пароль <span>↗</span></button>
+          <p class="login-error" id="setup-error" role="alert"></p>
+        </form>
+      </section>
+    </main>
+    <script src="script.js?v=shared-events-v2-20260929"></script>
+    <script src="i18n.js?v=shared-events-v2-20260929"></script>
   </body>
 </html>

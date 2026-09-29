@@ -36,6 +36,53 @@
 .admin-record-order button:disabled{cursor:not-allowed;opacity:.4}
 .record-order-message{color:#a33d3d;flex:1 1 100%;font-size:12px;grid-column:1/-1;margin:0}
 
+.page-visibility-card {
+  background: #eaf0f7;
+  display: grid;
+  gap: 22px;
+  padding: 28px 30px;
+}
+
+.page-visibility-card > p:not(.form-message) {
+  color: #64738a;
+  font-size: 14px;
+  margin: 0;
+  max-width: 760px;
+}
+
+.page-visibility-list {
+  background: #fff;
+  padding: 4px 24px;
+}
+
+.page-visibility-option {
+  align-items: center;
+  border-bottom: 1px solid #d9e1eb;
+  color: #142b4a;
+  display: flex;
+  gap: 14px;
+  min-height: 58px;
+}
+
+.page-visibility-option:last-child {
+  border-bottom: 0;
+}
+
+.page-visibility-option input {
+  accent-color: #142b4a;
+  height: 18px;
+  width: 18px;
+}
+
+.page-visibility-option span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.page-visibility-card .form-message {
+  margin: -12px 0 0;
+}
+
 .admin-backup {
   border-top: 1px solid #d9e1eb;
 }
@@ -77,6 +124,8 @@
   .backup-card{padding:22px}
   .backup-actions .button,.backup-import-button{width:100%}
   .admin-record-editor fieldset{grid-template-columns:1fr}
+  .page-visibility-card{padding:22px}
+  .page-visibility-card .button{width:100%}
   .admin-tabs{margin:0 -6% 28px;padding:8px 6%}
   .admin-tabs button{padding:11px 13px}
 }

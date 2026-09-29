@@ -9,6 +9,11 @@
   padding: 70px 24px;
 }
 
+#login-screen[hidden],
+#setup-screen[hidden] {
+  display: none;
+}
+
 .login-card {
   background: #fff;
   border-top: 5px solid #f3c94f;
