@@ -346,6 +346,13 @@
   .gallery-photo-menu-trigger:focus-visible {
     outline-color: #142b4a;
   }
+
+  .gallery-photo.is-actions-open .gallery-photo-menu-trigger {
+    display: grid;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 4;
+  }
 }
 
 @media (max-width: 480px) {
