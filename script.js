@@ -150,67 +150,101 @@ if (menuButton && navigation) {
 }
 
 const videosContainer = document.querySelector("#latest-videos");
-const channelId = "UCarf1uXs7OfnPYr9Oc0J8Cw";
-const feedUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`)}`;
 const pageLanguage = ["ru", "nl", "en"].includes(localStorage.getItem("philadelphia-language"))
   ? localStorage.getItem("philadelphia-language")
   : "ru";
 
 if (videosContainer) {
-  fetch(feedUrl)
+  fetch("latest-videos.json")
     .then((response) => {
       if (!response.ok) throw new Error("Не удалось загрузить видео");
       return response.json();
     })
     .then((data) => {
-      if (data.status !== "ok" || !Array.isArray(data.items) || data.items.length === 0) {
+      if (!Array.isArray(data.videos) || data.videos.length < 3) {
         throw new Error("Видео не найдены");
       }
 
-      const videoLocale = { ru: "ru-RU", nl: "nl-BE", en: "en-GB" }[pageLanguage];
       const watchLabel = { ru: "Смотреть видео", nl: "Video bekijken", en: "Watch video" }[pageLanguage];
       const videoTitleTranslations = {
         nl: {
           "Соответствуй тому, кто ты есть, христианин.": "Wees wie je als christen bent.",
           "Молитвенное поклонение": "Gebed en aanbidding",
           "Ищите славу, которая от Единого Бога": "Zoek de eer die van de enige God komt",
+          "Может ли антихрист обмануть церковь?": "Kan de antichrist de kerk misleiden?",
         },
         en: {
           "Соответствуй тому, кто ты есть, христианин.": "Be who you are called to be as a Christian.",
           "Молитвенное поклонение": "Prayer and worship",
           "Ищите славу, которая от Единого Бога": "Seek the glory that comes from the only God",
+          "Может ли антихрист обмануть церковь?": "Can the Antichrist deceive the church?",
         },
       };
-      videosContainer.innerHTML = data.items.slice(0, 3).map((video) => {
-        const videoId = video.guid.replace("yt:video:", "");
-        const title = videoTitleTranslations[pageLanguage]?.[video.title] || video.title;
-        const publishedDate = new Date(video.pubDate).toLocaleDateString(videoLocale, {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
+      const latestVideos = data.videos.slice(0, 3);
+      if (latestVideos.some((video) => !/^[\w-]{11}$/.test(video.id) || typeof video.title !== "string")) {
+        throw new Error("Некорректные данные видео");
+      }
 
-        return `<article class="video-card">
-          <a class="video-thumb" href="${video.link}" target="_blank" rel="noreferrer">
-            <img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" alt="${title}" loading="lazy" />
-            <span class="video-play">▶</span>
-          </a>
-          <div class="video-info"><p>${publishedDate}</p><h3>${title}</h3><a href="${video.link}" target="_blank" rel="noreferrer">${watchLabel} <span>↗</span></a></div>
-        </article>`;
-      }).join("");
+      videosContainer.replaceChildren(...latestVideos.map((video) => {
+        const videoUrl = `https://www.youtube.com/watch?v=${video.id}`;
+        const title = videoTitleTranslations[pageLanguage]?.[video.title] || video.title;
+        const card = document.createElement("article");
+        card.className = "video-card";
+
+        const thumbnailLink = document.createElement("a");
+        thumbnailLink.className = "video-thumb";
+        thumbnailLink.href = videoUrl;
+        thumbnailLink.target = "_blank";
+        thumbnailLink.rel = "noreferrer";
+
+        const thumbnail = document.createElement("img");
+        thumbnail.src = `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+        thumbnail.alt = title;
+        thumbnail.loading = "lazy";
+
+        const playIcon = document.createElement("span");
+        playIcon.className = "video-play";
+        playIcon.textContent = "▶";
+        thumbnailLink.append(thumbnail, playIcon);
+
+        const info = document.createElement("div");
+        info.className = "video-info";
+
+        const heading = document.createElement("h3");
+        heading.textContent = title;
+
+        const watchLink = document.createElement("a");
+        watchLink.href = videoUrl;
+        watchLink.target = "_blank";
+        watchLink.rel = "noreferrer";
+        watchLink.textContent = `${watchLabel} ↗`;
+
+        info.append(heading, watchLink);
+        card.append(thumbnailLink, info);
+        return card;
+      }));
     })
     .catch(() => {
       const unavailable = {
-        ru: "Видео временно недоступны.",
-        nl: "Video's zijn tijdelijk niet beschikbaar.",
-        en: "Videos are temporarily unavailable.",
+        ru: "Не удалось загрузить последние видео.",
+        nl: "De nieuwste video's konden niet worden geladen.",
+        en: "The latest videos could not be loaded.",
       }[pageLanguage];
       const channelLabel = {
         ru: "Открыть канал на YouTube",
         nl: "Kanaal openen op YouTube",
         en: "Open the YouTube channel",
       }[pageLanguage];
-      videosContainer.innerHTML = `<p class="video-status">${unavailable} <a href="https://www.youtube.com/@Church_P" target="_blank" rel="noreferrer">${channelLabel} ↗</a></p>`;
+      const status = document.createElement("p");
+      status.className = "video-status";
+      status.textContent = `${unavailable} `;
+      const channelLink = document.createElement("a");
+      channelLink.href = "https://www.youtube.com/@Church_P";
+      channelLink.target = "_blank";
+      channelLink.rel = "noreferrer";
+      channelLink.textContent = `${channelLabel} ↗`;
+      status.append(channelLink);
+      videosContainer.replaceChildren(status);
     });
 }
 
