@@ -2225,6 +2225,22 @@ sharedEventsReady = loadSharedEvents();
 renderLeaders();
 renderHomeGroups();
 renderPresbyters();
+if (leadersPageList || homeGroupsList || homeGroupsPreviewList || presbytersList) {
+  sharedContentReady = loadSharedContent()
+    .then(() => {
+      sharedContentLoadError = null;
+      renderLeaders();
+      renderHomeGroups();
+      renderPresbyters();
+    })
+    .catch((error) => {
+      sharedContentLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общее содержимое сайта.");
+      renderLeaders();
+      renderHomeGroups();
+      renderPresbyters();
+      console.error("Не удалось загрузить общее содержимое сайта.", sharedContentLoadError);
+    });
+}
 setupPeopleListAutoScroll([homeGroupsPreviewList, homeGroupsList, presbytersList]);
 if (galleryList) {
   sharedGalleryReady = loadSharedGallery()
