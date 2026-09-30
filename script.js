@@ -1511,7 +1511,7 @@ const recordEditorMarkup = (record, type) => {
         <label>Фото жены<input name="spouseImage" type="file" accept="image/*" />${record.spouseImage ? `<img class="admin-edit-image" src="${escapeHtml(record.spouseImage)}" alt="Фото жены" loading="lazy" />` : ""}</label>
       </fieldset>`
     : `<fieldset><legend>${getDynamicLabel("source")}</legend>
-    <label>${fieldLabels.title}<input name="title" value="${escapeHtml(record.title || "")}" required /></label>
+    <label>${fieldLabels.title}<input name="title" value="${escapeHtml(record.title || "")}"${type === "event" ? "" : " required"} /></label>
     ${type === "event" ? `<label>${getDynamicLabel("date")}<input name="date" type="date" value="${escapeHtml(record.date || "")}" /></label><label>${getDynamicLabel("time")}<input name="time" type="time" value="${escapeHtml(formatEventTime(record.time || ""))}" /></label><label class="event-dimming-option"><input name="dimImage" type="checkbox"${record.dimImage !== false ? " checked" : ""} /> ${getDynamicLabel("dimEventImage")}</label>` : ""}
     <label>${fieldLabels.tag}<input name="tag" value="${escapeHtml(record.tag || "")}" /></label>
     <label>${fieldLabels.description}<textarea name="description" rows="3">${escapeHtml(record.description || "")}</textarea></label>
@@ -1580,7 +1580,7 @@ const bindRecordEditors = (container, storageKey, type, render) => {
         }
         if ((type === "homeGroup" && (!updatedRecord.leader || !updatedRecord.location || !updatedRecord.day || !updatedRecord.description))
           || (type === "presbyter" && (!updatedRecord.husbandFirstName || !updatedRecord.husbandLastName || !updatedRecord.wifeFirstName || !updatedRecord.wifeLastName))
-          || (type !== "homeGroup" && type !== "presbyter" && !updatedRecord.title)) {
+          || (type !== "homeGroup" && type !== "presbyter" && type !== "event" && !updatedRecord.title)) {
           throw new Error("Заполните все обязательные поля.");
         }
 
