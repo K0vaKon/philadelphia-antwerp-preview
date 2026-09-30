@@ -8,8 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="theme.css?v=presbyter-family-cards-v2-20260928" />
-    <link rel="stylesheet" href="admin.css?v=page-visibility-v3-20260929" />
+    <link rel="stylesheet" href="theme.css?v=server-content-v1-20260929" />
+    <link rel="stylesheet" href="admin.css?v=server-content-v1-20260929" />
     <link rel="stylesheet" href="login.css?v=shared-events-v1-20260929" />
     <link rel="stylesheet" href="i18n.css" />
   </head>
@@ -33,15 +33,17 @@
       <form class="event-form" id="event-form">
         <div class="form-title"><span class="form-number">01</span><div><h2>Новое событие</h2><p>Заполните информацию о предстоящем событии.</p></div></div>
         <label>Название события<input name="title" required placeholder="Например, Вечер хвалы" /></label>
-        <div class="form-row"><label>Дата<input name="date" type="date" required /></label><label>Время (24 часа)<input name="time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" pattern="^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="18:30" title="Введите время в формате 24 часа, например 18:30" required /></label></div>
+        <div class="form-row"><label>Дата (необязательно)<input name="date" type="date" /></label><label>Время (необязательно)<input name="time" type="text" inputmode="numeric" autocomplete="off" maxlength="5" pattern="^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="18:30" title="Введите время в формате 24 часа, например 18:30" /></label></div>
         <label>Короткая категория<input name="tag" placeholder="Праздник, собрание, молодёжь" /></label>
-        <label>Описание<textarea name="description" rows="4" required placeholder="Расскажите, что будет на событии"></textarea></label>
+        <label>Описание (необязательно)<textarea name="description" rows="4" placeholder="Расскажите, что будет на событии"></textarea></label>
         <details class="translation-fields"><summary>Переводы на другие языки</summary><p>Если перевод не заполнен, посетители увидят исходный текст.</p>
           <div class="translation-language"><strong>Nederlands</strong><label>Название<input name="translations.nl.title" /></label><label>Категория<input name="translations.nl.tag" /></label><label>Описание<textarea name="translations.nl.description" rows="3"></textarea></label></div>
           <div class="translation-language"><strong>English</strong><label>Название<input name="translations.en.title" /></label><label>Категория<input name="translations.en.tag" /></label><label>Описание<textarea name="translations.en.description" rows="3"></textarea></label></div>
         </details>
         <label>Фото события<input name="image" type="file" accept="image/*" /></label>
         <p class="upload-hint">Поддерживаются JPEG, PNG, WebP и другие форматы изображений. Максимальный размер файла — 15 МБ. Фото оптимизируется перед сохранением.</p>
+        <label class="event-dimming-option"><input name="dimImage" type="checkbox" checked /> Затемнять фото под текстом</label>
+        <p class="upload-hint">Соотношение сторон загруженного фото сохраняется. Для карточек событий лучше подходят горизонтальные фотографии 4:3.</p>
         <button class="button button-dark" type="submit">Опубликовать событие <span>↗</span></button>
         <p class="form-message" id="form-message" role="status"></p>
       </form>
@@ -129,9 +131,9 @@
           <div class="section-top"><div><p class="eyebrow">Публикация</p><h2>Видимость<br /><span>страниц сайта.</span></h2></div></div>
           <div class="page-visibility-card">
             <p>Выберите страницы, которые должны быть доступны посетителям.</p>
-            <p>Чтобы изменения увидели все, скачайте файл настроек и замените им page-visibility.json в корневой папке сайта. Для GitHub Pages отправьте этот файл в репозиторий.</p>
+            <p>Настройки сохраняются на сервере и сразу применяются для всех посетителей сайта.</p>
             <div class="page-visibility-list" id="page-visibility-list"></div>
-            <button class="button button-dark" id="download-page-visibility" type="button">Скачать настройки страниц <span>↓</span></button>
+            <button class="button button-dark" id="save-page-visibility" type="button">Сохранить настройки страниц <span>↗</span></button>
             <p class="form-message" id="page-visibility-message" role="status"></p>
           </div>
         </section>
@@ -140,7 +142,7 @@
       <section class="admin-backup admin-events">
         <div class="section-top"><div><p class="eyebrow">Перенос и защита</p><h2>Резервная<br /><span>копия.</span></h2></div></div>
         <div class="backup-card">
-          <p>Резервная копия содержит общие события сервера и остальные записи этого браузера. Импорт загружает события на сервер; лидеры, группы, пресвитеры и фотографии восстанавливаются в этом браузере.</p>
+          <p>Резервная копия содержит общие события, служения, домашние группы, пресвитерские семьи и фотографии с сервера. При восстановлении выбранные данные заменяются на сервере.</p>
           <div class="backup-actions">
             <button class="button button-dark" id="export-backup" type="button">Скачать резервную копию <span>↓</span></button>
             <label class="backup-import-button">Восстановить из файла<input id="import-backup" type="file" accept="application/json,.json" /></label>
@@ -177,7 +179,7 @@
         </form>
       </section>
     </main>
-    <script src="script.js?v=shared-gallery-v2-20260929"></script>
-    <script src="i18n.js?v=shared-gallery-v1-20260929"></script>
+    <script src="script.js?v=auto-translate-20260930"></script>
+    <script src="i18n.js?v=server-content-v1-20260929"></script>
   </body>
 </html>

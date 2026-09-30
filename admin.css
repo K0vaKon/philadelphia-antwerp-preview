@@ -120,6 +120,21 @@
 .backup-import-button input {
   display: none;
 }
+.event-form .event-dimming-option,
+.admin-record-editor .event-dimming-option {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+.event-form .event-dimming-option input,
+.admin-record-editor .event-dimming-option input {
+  background: transparent;
+  border: 0;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  width: auto;
+}
 @media(max-width:800px){
   .backup-card{padding:22px}
   .backup-actions .button,.backup-import-button{width:100%}

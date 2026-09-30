@@ -86,10 +86,24 @@ if (adminTabs) {
 }
 
 const showAdmin = () => {
-  if (adminContent) adminContent.hidden = false;
+  if (adminContent) adminContent.hidden = true;
   if (loginScreen) loginScreen.hidden = true;
   if (setupScreen) setupScreen.hidden = true;
   if (logoutButton) logoutButton.hidden = false;
+  sharedContentReady = loadSharedContent(true)
+    .then(() => {
+      sharedContentLoadError = null;
+      renderLeaders();
+      renderHomeGroups();
+      renderPresbyters();
+    })
+    .catch((error) => {
+      sharedContentLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общее содержимое сайта.");
+      renderLeaders();
+      renderHomeGroups();
+      renderPresbyters();
+      console.error("Не удалось загрузить общее содержимое сайта.", sharedContentLoadError);
+    });
   sharedGalleryReady = loadSharedGallery(true)
     .then(() => renderGallery())
     .catch((error) => {
@@ -97,14 +111,20 @@ const showAdmin = () => {
       renderGallery();
       console.error("Не удалось загрузить общую галерею с сервера.", sharedGalleryLoadError);
     });
+  Promise.all([sharedContentReady, sharedGalleryReady]).finally(() => {
+    if (adminContent) adminContent.hidden = false;
+  });
 };
 
-const readRecords = (storageKey) => {
+const readLegacyRecords = (storageKey) => {
+  const value = localStorage.getItem(storageKey);
+  if (value === null) return [];
   try {
-    const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    return Array.isArray(stored) ? stored : [];
-  } catch {
-    return [];
+    const stored = JSON.parse(value);
+    if (!Array.isArray(stored)) throw new Error("Старые данные в браузере имеют неверный формат.");
+    return stored;
+  } catch (error) {
+    throw new Error(`Не удалось прочитать старые данные из браузера: ${error instanceof Error ? error.message : "неизвестная ошибка."}`);
   }
 };
 
@@ -237,17 +257,16 @@ const pageVisibilityPages = {
     label: { ru: "Галерея", nl: "Galerij", en: "Gallery" },
   },
 };
-const pageVisibilityDraftKey = "philadelphia-page-visibility-draft";
 const pageVisibilityMessages = {
-  downloaded: {
-    ru: "Файл скачан. Замените им page-visibility.json в корневой папке сайта, чтобы применить изменения для всех посетителей.",
-    nl: "Bestand gedownload. Vervang hiermee page-visibility.json in de hoofdmap van de website om de wijzigingen voor alle bezoekers toe te passen.",
-    en: "File downloaded. Replace page-visibility.json in the website root folder to apply the changes for all visitors.",
+  saved: {
+    ru: "Настройки сохранены на сервере и уже применяются для всех посетителей.",
+    nl: "De instellingen zijn opgeslagen op de server en zijn nu actief voor alle bezoekers.",
+    en: "Settings are saved on the server and are now active for all visitors.",
   },
   error: {
-    ru: "Не удалось подготовить файл настроек. Попробуйте ещё раз.",
-    nl: "Het instellingenbestand kon niet worden voorbereid. Probeer het opnieuw.",
-    en: "Could not prepare the settings file. Please try again.",
+    ru: "Не удалось сохранить настройки на сервере. Попробуйте ещё раз.",
+    nl: "De instellingen konden niet op de server worden opgeslagen. Probeer het opnieuw.",
+    en: "Could not save the settings on the server. Please try again.",
   },
 };
 const normalizePageVisibility = (value) => {
@@ -266,7 +285,7 @@ const normalizePageVisibility = (value) => {
 const initializePageVisibility = async () => {
   const isAdminPage = document.body.classList.contains("admin-page");
   const visibilityList = document.querySelector("#page-visibility-list");
-  const downloadButton = document.querySelector("#download-page-visibility");
+  const saveButton = document.querySelector("#save-page-visibility");
   const statusMessage = document.querySelector("#page-visibility-message");
   if (isAdminPage && !visibilityList) return;
   const pageVisibilityStylesheet = document.createElement("link");
@@ -276,59 +295,57 @@ const initializePageVisibility = async () => {
 
   let publishedVisibility = Object.fromEntries(Object.keys(pageVisibilityPages).map((key) => [key, true]));
   try {
-    const response = await fetch("page-visibility.json", { cache: "no-store" });
-    if (!response.ok) throw new Error(`Не удалось загрузить page-visibility.json: HTTP ${response.status}`);
-    publishedVisibility = normalizePageVisibility(await response.json());
+    const settings = await requestApi("content.php?collection=pageVisibility");
+    publishedVisibility = normalizePageVisibility(settings.pageVisibility);
+    sharedContent.pageVisibility = publishedVisibility;
   } catch (error) {
-    console.error("Настройки видимости страниц не загружены; все страницы оставлены доступными.", error);
-  }
-
-  if (isAdminPage && visibilityList && downloadButton && statusMessage) {
-    let draft = publishedVisibility;
+    console.error("Настройки видимости страниц не загружены с сервера; используется опубликованный файл.", error);
     try {
-      const savedDraft = localStorage.getItem(pageVisibilityDraftKey);
-      if (savedDraft) draft = normalizePageVisibility(JSON.parse(savedDraft));
-    } catch (error) {
-      console.error("Черновик видимости страниц повреждён; загружены опубликованные настройки.", error);
+      const response = await fetch("page-visibility.json", { cache: "no-store" });
+      if (!response.ok) throw new Error(`Не удалось загрузить page-visibility.json: HTTP ${response.status}`);
+      publishedVisibility = normalizePageVisibility(await response.json());
+    } catch (fallbackError) {
+      console.error("Опубликованный файл видимости страниц также не загружен; страницы оставлены доступными.", fallbackError);
     }
+  }
+  sharedContent.pageVisibility = publishedVisibility;
 
-    const saveDraft = () => {
-      draft = Object.fromEntries([...visibilityList.querySelectorAll("[data-page-visibility]")].map((input) => [
-        input.dataset.pageVisibility,
-        input.checked,
-      ]));
-      localStorage.setItem(pageVisibilityDraftKey, JSON.stringify(draft));
-      statusMessage.textContent = "";
-    };
-
+  if (isAdminPage && visibilityList && saveButton && statusMessage) {
     visibilityList.replaceChildren(...Object.entries(pageVisibilityPages).map(([key, page]) => {
       const label = document.createElement("label");
       label.className = "page-visibility-option";
       const input = document.createElement("input");
       input.type = "checkbox";
-      input.checked = draft[key];
+      input.checked = publishedVisibility[key];
       input.dataset.pageVisibility = key;
-      input.addEventListener("change", saveDraft);
       const name = document.createElement("span");
       name.textContent = page.label[pageLanguage];
       label.append(input, name);
       return label;
     }));
-
-    downloadButton.addEventListener("click", () => {
+    const readDraft = () => Object.fromEntries([...visibilityList.querySelectorAll("[data-page-visibility]")].map((input) => [
+      input.dataset.pageVisibility,
+      input.checked,
+    ]));
+    visibilityList.addEventListener("change", () => {
+      statusMessage.textContent = "";
+    });
+    saveButton.addEventListener("click", async () => {
+      saveButton.disabled = true;
       try {
-        saveDraft();
-        const file = new Blob([`${JSON.stringify(draft, null, 2)}\n`], { type: "application/json" });
-        const url = URL.createObjectURL(file);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "page-visibility.json";
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        statusMessage.textContent = pageVisibilityMessages.downloaded[pageLanguage];
+        const result = await requestApi("content.php?collection=pageVisibility", {
+          method: "PUT",
+          body: JSON.stringify({ pageVisibility: readDraft() }),
+        });
+        publishedVisibility = normalizePageVisibility(result.pageVisibility);
+        statusMessage.classList.remove("form-message-error");
+        statusMessage.textContent = pageVisibilityMessages.saved[pageLanguage];
       } catch (error) {
-        console.error("Не удалось скачать настройки видимости страниц.", error);
+        console.error("Не удалось сохранить настройки видимости страниц.", error);
+        statusMessage.classList.add("form-message-error");
         statusMessage.textContent = pageVisibilityMessages.error[pageLanguage];
+      } finally {
+        saveButton.disabled = false;
       }
     });
     return;
@@ -496,6 +513,24 @@ const galleryFormMessage = document.querySelector("#gallery-form-message");
 const galleryLoadMoreButton = document.querySelector("#gallery-load-more");
 const galleryStorageKey = "philadelphia-gallery";
 const contentLanguages = ["nl", "en"];
+const contentCollectionByStorageKey = new Map([
+  [leaderStorageKey, "leaders"],
+  [homeGroupStorageKey, "homeGroups"],
+  [presbyterStorageKey, "presbyters"],
+]);
+let sharedContent = {
+  leaders: [],
+  homeGroups: [],
+  presbyters: [],
+  pageVisibility: { about: true, leaders: true, gallery: true },
+};
+let sharedContentLoadError = null;
+let sharedContentReady = Promise.resolve();
+const readRecords = (storageKey) => {
+  const collection = contentCollectionByStorageKey.get(storageKey);
+  if (!collection) throw new Error("Неизвестный раздел содержимого сайта.");
+  return sharedContent[collection];
+};
 const galleryBatchSize = 12;
 let galleryPhotos = [];
 let galleryRenderedCount = 0;
@@ -514,7 +549,7 @@ const maxStoredImageSize = 3 * 1024 * 1024;
 const isSafeImage = (value) => typeof value === "string" && (value === "" || value.startsWith("data:image/") || /^https:\/\/[^\s]+$/i.test(value));
 
 const prepareUploadedImage = async (value) => {
-  if (!(value instanceof File) || value.size === 0) return "";
+  if (!(value instanceof File) || value.size === 0) return { dataUrl: "", aspectRatio: null };
   if (!value.type.startsWith("image/")) {
     throw new Error("Выберите файл изображения (например, JPEG, PNG или WebP).");
   }
@@ -558,7 +593,7 @@ const prepareUploadedImage = async (value) => {
       throw new Error("Фото слишком большое даже после оптимизации. Выберите изображение поменьше.");
     }
 
-    return await new Promise((resolve, reject) => {
+    const dataUrl = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.addEventListener("load", () => {
         if (typeof reader.result === "string") resolve(reader.result);
@@ -567,23 +602,26 @@ const prepareUploadedImage = async (value) => {
       reader.addEventListener("error", () => reject(new Error("Не удалось прочитать фото. Попробуйте другой файл.")));
       reader.readAsDataURL(optimizedImage);
     });
+    return { dataUrl, aspectRatio: canvas.width / canvas.height };
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
 };
 
-const saveAdminRecord = (storageKey, record, messageElement, successMessage, render) => {
-  const previousValue = localStorage.getItem(storageKey);
+const saveAdminRecord = async (storageKey, record, messageElement, successMessage, render) => {
+  const collection = contentCollectionByStorageKey.get(storageKey);
+  if (!collection) throw new Error("Неизвестный раздел содержимого сайта.");
   try {
-    const records = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    if (!Array.isArray(records)) throw new Error("Сохранённые данные повреждены. Сначала скачайте резервную копию.");
-    localStorage.setItem(storageKey, JSON.stringify([record, ...records]));
+    await sharedContentReady;
+    if (sharedContentLoadError) throw sharedContentLoadError;
+    const result = await requestApi(`content.php?collection=${collection}`, {
+      method: "POST",
+      body: JSON.stringify(record),
+    });
+    if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректный список записей.");
+    sharedContent[collection] = result.items;
   } catch (error) {
-    const isStorageFull = error instanceof DOMException
-      && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED");
-    messageElement.textContent = isStorageFull
-      ? "Не удалось сохранить: в браузере закончилось место. Удалите старые события, фотографии или лидеров либо освободите место и попробуйте снова."
-      : `Не удалось сохранить: ${error instanceof Error ? error.message : "неизвестная ошибка браузера."}`;
+    messageElement.textContent = error instanceof Error ? error.message : "Не удалось сохранить запись на сервере.";
     messageElement.classList.add("form-message-error");
     return false;
   }
@@ -591,25 +629,62 @@ const saveAdminRecord = (storageKey, record, messageElement, successMessage, ren
   try {
     render();
   } catch (error) {
-    if (previousValue === null) localStorage.removeItem(storageKey);
-    else localStorage.setItem(storageKey, previousValue);
-    messageElement.textContent = `Не удалось отобразить сохранённую запись: ${error instanceof Error ? error.message : "неизвестная ошибка."}`;
+    console.error("Запись сохранена на сервере, но не удалось обновить её отображение.", error);
+    messageElement.textContent = `Запись сохранена, но список не удалось обновить: ${error instanceof Error ? error.message : "неизвестная ошибка."}`;
     messageElement.classList.add("form-message-error");
-    return false;
+    return true;
   }
   messageElement.classList.remove("form-message-error");
   messageElement.textContent = successMessage;
   return true;
 };
 
+const replaceSharedRecords = async (storageKey, records, reorderOnly = false) => {
+  const collection = contentCollectionByStorageKey.get(storageKey);
+  if (!collection) throw new Error("Неизвестный раздел содержимого сайта.");
+  if (reorderOnly) {
+    const ordered = await requestApi(`content.php?collection=${collection}&action=order`, {
+      method: "PUT",
+      body: JSON.stringify({ ids: records.map((record) => record.id) }),
+    });
+    if (!Array.isArray(ordered.items)) throw new Error("Сервер вернул некорректный порядок записей.");
+    sharedContent[collection] = ordered.items;
+    return;
+  }
+
+  const desiredIds = new Set(records.map((record) => record.id));
+  for (const record of records) {
+    const exists = sharedContent[collection].some((item) => item.id === record.id);
+    const result = await requestApi(
+      `content.php?collection=${collection}${exists ? `&id=${encodeURIComponent(record.id)}` : ""}`,
+      { method: exists ? "PUT" : "POST", body: JSON.stringify(record) },
+    );
+    if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректный список записей.");
+    sharedContent[collection] = result.items;
+  }
+  for (const record of [...sharedContent[collection]]) {
+    if (desiredIds.has(record.id)) continue;
+    const result = await requestApi(`content.php?collection=${collection}&id=${encodeURIComponent(record.id)}`, { method: "DELETE" });
+    if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректный список записей.");
+    sharedContent[collection] = result.items;
+  }
+  const result = await requestApi(`content.php?collection=${collection}&action=order`, {
+    method: "PUT",
+    body: JSON.stringify({ ids: records.map((record) => record.id) }),
+  });
+  if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректный список записей.");
+  sharedContent[collection] = result.items;
+};
+
 const normalizeBackupItems = (items, type) => {
   if (!Array.isArray(items) || items.length > 500) throw new Error(`Некорректные данные ${type}.`);
   return items.map((item) => {
-    if (!item || typeof item !== "object" || typeof item.id !== "string" || typeof item.title !== "string") throw new Error(`Некорректная запись ${type}.`);
+    if (!item || typeof item !== "object" || typeof item.id !== "string") throw new Error(`Некорректная запись ${type}.`);
     const normalized = { ...item };
-    ["id", "title", "tag", "description", "date", "time", "image", "spouseImage", "husbandFirstName", "husbandLastName", "wifeFirstName", "wifeLastName"].forEach((key) => {
+    ["id", "title", "tag", "description", "date", "time", "image", "spouseImage", "husbandFirstName", "husbandLastName", "wifeFirstName", "wifeLastName", "leader", "location", "day"].forEach((key) => {
       if (normalized[key] !== undefined && typeof normalized[key] !== "string") throw new Error(`Некорректное поле ${key}.`);
-      if (typeof normalized[key] === "string" && normalized[key].length > 1000000) throw new Error("Слишком большое текстовое поле.");
+      const limit = ["image", "spouseImage"].includes(key) ? 5 * 1024 * 1024 : 12000;
+      if (typeof normalized[key] === "string" && normalized[key].length > limit) throw new Error("Слишком большое текстовое поле.");
     });
     if (!isSafeImage(normalized.image || "") || !isSafeImage(normalized.spouseImage || "")) {
       throw new Error("Разрешены только изображения и безопасные HTTPS-ссылки.");
@@ -671,6 +746,7 @@ const createBackup = async () => JSON.stringify({
   leaders: readLeaders(),
   homeGroups: readRecords(homeGroupStorageKey),
   presbyters: readRecords(presbyterStorageKey),
+  pageVisibility: sharedContent.pageVisibility,
   gallery: await Promise.all(readGalleryPhotos().map(async (photo) => ({
     ...photo,
     image: await galleryImageAsDataUrl(photo.image),
@@ -704,12 +780,74 @@ const readEvents = () => {
 };
 
 const readLeaders = () => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(leaderStorageKey) || "[]");
-    return Array.isArray(stored) ? stored : [];
-  } catch {
-    return [];
+  return sharedContent.leaders;
+};
+
+const updatePageVisibilityControls = () => {
+  document.querySelectorAll("#page-visibility-list [data-page-visibility]").forEach((input) => {
+    const page = input.dataset.pageVisibility;
+    if (page && Object.hasOwn(sharedContent.pageVisibility, page)) {
+      input.checked = sharedContent.pageVisibility[page];
+    }
+  });
+};
+
+const loadSharedContent = async (migrateLegacyRecords = false) => {
+  const allCollections = [...contentCollectionByStorageKey.values()];
+  const collectionsToLoad = migrateLegacyRecords || leadersPageList || adminLeadersList
+    ? allCollections
+    : homeGroupsPreviewList ? ["homeGroups"] : [];
+  for (const collection of collectionsToLoad) {
+    const result = await requestApi(`content.php?collection=${collection}`);
+    if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректное содержимое сайта.");
+    sharedContent[collection] = result.items;
   }
+
+  if (migrateLegacyRecords) {
+    const legacyVisibilityDraft = localStorage.getItem("philadelphia-page-visibility-draft");
+    if (legacyVisibilityDraft !== null) {
+      let parsedDraft;
+      try {
+        parsedDraft = JSON.parse(legacyVisibilityDraft);
+      } catch {
+        throw new Error("Черновик видимости страниц в браузере повреждён. Не удалось перенести его на сервер.");
+      }
+      const draftVisibility = normalizePageVisibility(parsedDraft);
+      const currentVisibility = await requestApi("content.php?collection=pageVisibility");
+      if (typeof currentVisibility.stored !== "boolean") {
+        throw new Error("Сервер не сообщил, сохранены ли настройки видимости страниц.");
+      }
+      if (!currentVisibility.stored) {
+        const migratedVisibility = await requestApi("content.php?collection=pageVisibility", {
+          method: "PUT",
+          body: JSON.stringify({ pageVisibility: draftVisibility }),
+        });
+        sharedContent.pageVisibility = normalizePageVisibility(migratedVisibility.pageVisibility);
+        updatePageVisibilityControls();
+      }
+    }
+
+    for (const [storageKey, collection] of contentCollectionByStorageKey) {
+      const legacyRecords = readLegacyRecords(storageKey);
+      const existingIds = new Set(sharedContent[collection].map((record) => record.id));
+      for (const record of legacyRecords) {
+        if (!record || typeof record.id !== "string") {
+          throw new Error("В старых данных браузера найдена запись без идентификатора. Сначала скачайте резервную копию и обратитесь за помощью.");
+        }
+        if (existingIds.has(record.id)) continue;
+        const migrated = await requestApi(`content.php?collection=${collection}`, {
+          method: "POST",
+          body: JSON.stringify(record),
+        });
+        if (!Array.isArray(migrated.items)) throw new Error("Сервер вернул некорректный список записей.");
+        sharedContent[collection] = migrated.items;
+        existingIds.add(record.id);
+      }
+    }
+    for (const storageKey of contentCollectionByStorageKey.keys()) localStorage.removeItem(storageKey);
+    localStorage.removeItem("philadelphia-page-visibility-draft");
+  }
+  return sharedContent;
 };
 
 const readGalleryPhotos = () => {
@@ -747,7 +885,7 @@ const loadSharedGallery = async (migrateLegacyPhotos = false) => {
   sharedGalleryLoadError = null;
 
   if (migrateLegacyPhotos) {
-    const legacyPhotos = readRecords(galleryStorageKey);
+    const legacyPhotos = readLegacyRecords(galleryStorageKey);
     const existingIds = new Set(sharedGalleryPhotos.map((photo) => photo.id));
     const photosToMigrate = legacyPhotos.filter((photo) => !existingIds.has(photo.id));
     for (const photo of photosToMigrate) {
@@ -956,6 +1094,7 @@ const getDynamicLabel = (key) => {
     shortDescription: { ru: "Небольшое описание", nl: "Korte beschrijving", en: "Short description" },
     date: { ru: "Дата", nl: "Datum", en: "Date" },
     time: { ru: "Время", nl: "Tijd", en: "Time" },
+    dimEventImage: { ru: "Затемнять фотографию под текстом", nl: "Foto onder de tekst donkerder maken", en: "Darken the photo behind text" },
     image: { ru: "Фотография", nl: "Foto", en: "Photo" },
     noLeaders: { ru: "Пока нет добавленных лидеров служения.", nl: "Er zijn nog geen bedieningsleiders toegevoegd.", en: "No ministry leaders have been added yet." },
     noAdminRecords: { ru: "Пока нет записей.", nl: "Er zijn nog geen items.", en: "There are no entries yet." },
@@ -1280,13 +1419,54 @@ const updateAdminRecordCount = (container, count, type) => {
   if (countElement) countElement.textContent = formatAdminRecordCount(count, type);
 };
 
-const createRecordTranslations = (formData, translatableFields = ["title", "tag", "description"]) => Object.fromEntries(contentLanguages.map((language) => {
-  const fields = Object.fromEntries(translatableFields.map((field) => [
-    field,
-    String(formData.get(`translations.${language}.${field}`) || "").trim(),
-  ]));
-  return [language, fields];
-}).filter(([, fields]) => Object.values(fields).some(Boolean)));
+const translateCache = new Map();
+
+const translateChunk = async (text, language) => {
+  const key = `${language}|${text}`;
+  if (translateCache.has(key)) return translateCache.get(key);
+  const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ru|${language}`);
+  if (!response.ok) throw new Error("Translation failed");
+  const data = await response.json();
+  const translated = String(data?.responseData?.translatedText || "");
+  if (data?.responseStatus !== 200 || !translated || /MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(translated)) throw new Error("Translation failed");
+  translateCache.set(key, translated);
+  return translated;
+};
+
+// MyMemory accepts up to 500 characters per request, so long text is split by sentences.
+const translateText = async (text, language) => {
+  const chunks = [];
+  let current = "";
+  for (const part of text.match(/[^.!?\n]+[.!?\n]*\s*/g) || [text]) {
+    if (current && (current + part).length > 450) { chunks.push(current); current = ""; }
+    current += part;
+  }
+  if (current) chunks.push(current);
+  const results = [];
+  for (const chunk of chunks.flatMap((item) => item.length > 450 ? item.match(/[\s\S]{1,450}/g) : [item])) {
+    results.push(chunk.trim() ? (await translateChunk(chunk.trim(), language)) : "");
+  }
+  return results.join(" ").trim();
+};
+
+// Fields left empty in the Dutch/English forms are translated automatically from the Russian source.
+const createRecordTranslations = async (formData, translatableFields = ["title", "tag", "description"]) => {
+  const entries = await Promise.all(contentLanguages.map(async (language) => {
+    const values = await Promise.all(translatableFields.map(async (field) => {
+      const manual = String(formData.get(`translations.${language}.${field}`) || "").trim();
+      if (manual) return [field, manual];
+      const source = String(formData.get(field) || "").trim();
+      if (!source) return [field, ""];
+      try {
+        return [field, await translateText(source, language)];
+      } catch {
+        return [field, ""];
+      }
+    }));
+    return [language, Object.fromEntries(values)];
+  }));
+  return Object.fromEntries(entries.filter(([, fields]) => Object.values(fields).some(Boolean)));
+};
 
 const splitLegacyPresbyterName = (record) => {
   const [firstName = "", ...lastNameParts] = String(record.title || "").trim().split(/\s+/);
@@ -1332,7 +1512,7 @@ const recordEditorMarkup = (record, type) => {
       </fieldset>`
     : `<fieldset><legend>${getDynamicLabel("source")}</legend>
     <label>${fieldLabels.title}<input name="title" value="${escapeHtml(record.title || "")}" required /></label>
-    ${type === "event" ? `<label>${getDynamicLabel("date")}<input name="date" type="date" value="${escapeHtml(record.date || "")}" required /></label><label>${getDynamicLabel("time")}<input name="time" type="time" value="${escapeHtml(formatEventTime(record.time || ""))}" required /></label>` : ""}
+    ${type === "event" ? `<label>${getDynamicLabel("date")}<input name="date" type="date" value="${escapeHtml(record.date || "")}" /></label><label>${getDynamicLabel("time")}<input name="time" type="time" value="${escapeHtml(formatEventTime(record.time || ""))}" /></label><label class="event-dimming-option"><input name="dimImage" type="checkbox"${record.dimImage !== false ? " checked" : ""} /> ${getDynamicLabel("dimEventImage")}</label>` : ""}
     <label>${fieldLabels.tag}<input name="tag" value="${escapeHtml(record.tag || "")}" /></label>
     <label>${fieldLabels.description}<textarea name="description" rows="3">${escapeHtml(record.description || "")}</textarea></label>
   </fieldset>`;
@@ -1358,23 +1538,22 @@ const bindRecordEditors = (container, storageKey, type, render) => {
       submitEvent.preventDefault();
       const message = form.querySelector(".record-save-message");
       try {
-        const records = type === "event"
-          ? readEvents()
-          : JSON.parse(localStorage.getItem(storageKey) || "[]");
-        if (!Array.isArray(records)) throw new Error("Сохранённые записи имеют неверный формат.");
+        const records = type === "event" ? readEvents() : readRecords(storageKey);
         const record = records.find((item) => item.id === form.dataset.recordId);
         if (!record) throw new Error("Запись не найдена. Обновите страницу и попробуйте снова.");
 
         const formData = new FormData(form);
-        const [image, spouseImage] = await Promise.all([
+        const [uploadedImage, uploadedSpouseImage] = await Promise.all([
           prepareUploadedImage(formData.get("image")),
           type === "presbyter" ? prepareUploadedImage(formData.get("spouseImage")) : "",
         ]);
+        const image = uploadedImage.dataUrl;
+        const spouseImage = typeof uploadedSpouseImage === "string" ? "" : uploadedSpouseImage.dataUrl;
         const updatedRecord = {
           ...record,
           ...(type === "presbyter" ? {} : {
             description: String(formData.get("description") || "").trim(),
-            translations: createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
+            translations: await createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
           }),
           image: image || record.image,
           ...(type === "presbyter" ? { spouseImage: spouseImage || record.spouseImage || "" } : {}),
@@ -1396,10 +1575,12 @@ const bindRecordEditors = (container, storageKey, type, render) => {
         if (type === "event") {
           updatedRecord.date = String(formData.get("date") || "");
           updatedRecord.time = String(formData.get("time") || "");
+          updatedRecord.dimImage = formData.get("dimImage") === "on";
+          updatedRecord.imageAspectRatio = 0.8;
         }
         if ((type === "homeGroup" && (!updatedRecord.leader || !updatedRecord.location || !updatedRecord.day || !updatedRecord.description))
           || (type === "presbyter" && (!updatedRecord.husbandFirstName || !updatedRecord.husbandLastName || !updatedRecord.wifeFirstName || !updatedRecord.wifeLastName))
-          || (type !== "homeGroup" && type !== "presbyter" && (!updatedRecord.title || (type === "event" && (!updatedRecord.date || !updatedRecord.time))))) {
+          || (type !== "homeGroup" && type !== "presbyter" && !updatedRecord.title)) {
           throw new Error("Заполните все обязательные поля.");
         }
 
@@ -1410,8 +1591,14 @@ const bindRecordEditors = (container, storageKey, type, render) => {
           });
           sharedEvents = result.events;
         } else {
-          const updatedRecords = records.map((item) => item.id === updatedRecord.id ? updatedRecord : item);
-          localStorage.setItem(storageKey, JSON.stringify(updatedRecords));
+          const collection = contentCollectionByStorageKey.get(storageKey);
+          if (!collection) throw new Error("Неизвестный раздел содержимого сайта.");
+          const result = await requestApi(`content.php?collection=${collection}&id=${encodeURIComponent(updatedRecord.id)}`, {
+            method: "PUT",
+            body: JSON.stringify(updatedRecord),
+          });
+          if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректный список записей.");
+          sharedContent[collection] = result.items;
         }
         render();
         const updatedForm = [...container.querySelectorAll("form[data-record-editor]")]
@@ -1487,7 +1674,9 @@ const presbyterFamilyCardMarkup = (record) => {
 
 const renderDirectory = (records, list, emptyLabel, type, compact = false) => {
   if (!list) return;
-  list.innerHTML = records.length
+  list.innerHTML = sharedContentLoadError
+    ? `<p class="directory-empty">${escapeHtml(sharedContentLoadError.message)}</p>`
+    : records.length
     ? records.map((record) => type === "homeGroup"
       ? homeGroupCardMarkup(record, compact)
       : type === "presbyter"
@@ -1499,7 +1688,9 @@ const renderDirectory = (records, list, emptyLabel, type, compact = false) => {
 const renderAdminDirectory = (records, container, storageKey, type, render) => {
   if (!container) return;
   updateAdminRecordCount(container, records.length, type);
-  container.innerHTML = records.length
+  container.innerHTML = sharedContentLoadError
+    ? `<p class="admin-record-empty form-message-error">${escapeHtml(sharedContentLoadError.message)}</p>`
+    : records.length
     ? records.map((record, index) => {
       const title = type === "homeGroup"
         ? getLocalizedHomeGroupField(record, "leader")
@@ -1517,7 +1708,7 @@ const renderAdminDirectory = (records, container, storageKey, type, render) => {
   bindRecordEditors(container, storageKey, type, render);
   if (type === "homeGroup") {
     container.querySelectorAll("[data-move-home-group]").forEach((button) => {
-      button.addEventListener("click", () => {
+      button.addEventListener("click", async () => {
         const storedRecords = readRecords(storageKey);
         const currentIndex = storedRecords.findIndex((record) => record.id === button.dataset.recordId);
         const direction = button.dataset.moveHomeGroup === "up" ? -1 : 1;
@@ -1526,12 +1717,12 @@ const renderAdminDirectory = (records, container, storageKey, type, render) => {
 
         [storedRecords[currentIndex], storedRecords[nextIndex]] = [storedRecords[nextIndex], storedRecords[currentIndex]];
         try {
-          localStorage.setItem(storageKey, JSON.stringify(storedRecords));
+          await replaceSharedRecords(storageKey, storedRecords, true);
         } catch (error) {
           const message = button.closest(".admin-event")?.querySelector(".record-order-message");
           if (message) {
             message.hidden = false;
-            message.textContent = `Не удалось сохранить порядок домашних групп: ${error instanceof Error ? error.message : "ошибка браузера."}`;
+            message.textContent = `Не удалось сохранить порядок домашних групп: ${error instanceof Error ? error.message : "ошибка сервера."}`;
           }
           return;
         }
@@ -1547,9 +1738,23 @@ const renderAdminDirectory = (records, container, storageKey, type, render) => {
     });
   }
   container.querySelectorAll("[data-delete-record]").forEach((button) => {
-    button.addEventListener("click", () => {
-      localStorage.setItem(storageKey, JSON.stringify(readRecords(storageKey).filter((record) => record.id !== button.dataset.deleteRecord)));
-      render();
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        const collection = contentCollectionByStorageKey.get(storageKey);
+        if (!collection) throw new Error("Неизвестный раздел содержимого сайта.");
+        const result = await requestApi(`content.php?collection=${collection}&id=${encodeURIComponent(button.dataset.deleteRecord)}`, { method: "DELETE" });
+        if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректный список записей.");
+        sharedContent[collection] = result.items;
+        render();
+      } catch (error) {
+        button.disabled = false;
+        const row = button.closest(".admin-event");
+        const message = document.createElement("p");
+        message.className = "record-save-message form-message-error";
+        message.textContent = error instanceof Error ? error.message : "Не удалось удалить запись с сервера.";
+        row?.append(message);
+      }
     });
   });
 };
@@ -1622,16 +1827,32 @@ const setupPeopleListAutoScroll = (lists) => {
 const renderLeaders = () => {
   const leaders = readLeaders();
   if (leadersPageList) {
-    leadersPageList.innerHTML = leaders.length ? leaders.map((leader) => leaderCardMarkup(leader)).join("") : `<div class="leader-empty">${getDynamicLabel("noLeaders")}</div>`;
+    leadersPageList.innerHTML = sharedContentLoadError
+      ? `<div class="leader-empty">${escapeHtml(sharedContentLoadError.message)}</div>`
+      : leaders.length ? leaders.map((leader) => leaderCardMarkup(leader)).join("") : `<div class="leader-empty">${getDynamicLabel("noLeaders")}</div>`;
   }
   if (adminLeadersList) {
     updateAdminRecordCount(adminLeadersList, leaders.length, "leader");
-    adminLeadersList.innerHTML = leaders.length ? leaders.map((leader) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(leader, "title"))}</strong><span>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel("service"))}</span></div><button type="button" data-delete-leader="${escapeHtml(leader.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(leader, "leader")}</article>`).join("") : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
+    adminLeadersList.innerHTML = sharedContentLoadError
+      ? `<p class="admin-record-empty form-message-error">${escapeHtml(sharedContentLoadError.message)}</p>`
+      : leaders.length ? leaders.map((leader) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(leader, "title"))}</strong><span>${escapeHtml(getLocalizedRecordField(leader, "tag") || getDynamicLabel("service"))}</span></div><button type="button" data-delete-leader="${escapeHtml(leader.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(leader, "leader")}</article>`).join("") : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
     bindRecordEditors(adminLeadersList, leaderStorageKey, "leader", renderLeaders);
     adminLeadersList.querySelectorAll("[data-delete-leader]").forEach((button) => {
-      button.addEventListener("click", () => {
-        localStorage.setItem(leaderStorageKey, JSON.stringify(readLeaders().filter((leader) => leader.id !== button.dataset.deleteLeader)));
-        renderLeaders();
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          const result = await requestApi(`content.php?collection=leaders&id=${encodeURIComponent(button.dataset.deleteLeader)}`, { method: "DELETE" });
+          if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректный список лидеров.");
+          sharedContent.leaders = result.items;
+          renderLeaders();
+        } catch (error) {
+          button.disabled = false;
+          const row = button.closest(".admin-event");
+          const message = document.createElement("p");
+          message.className = "record-save-message form-message-error";
+          message.textContent = error instanceof Error ? error.message : "Не удалось удалить лидера с сервера.";
+          row?.append(message);
+        }
       });
     });
   }
@@ -1663,7 +1884,8 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => (
 })[character]);
 
 const compareEventsByDate = (a, b) => (
-  a.date.localeCompare(b.date) || formatEventTime(a.time).localeCompare(formatEventTime(b.time))
+  (a.date ? (b.date ? a.date.localeCompare(b.date) : -1) : (b.date ? 1 : 0))
+    || formatEventTime(a.time).localeCompare(formatEventTime(b.time))
 );
 
 const getUpcomingEvents = () => {
@@ -1672,7 +1894,7 @@ const getUpcomingEvents = () => {
 
   return readEvents()
     .filter((event) => {
-      if (!event.date) return false;
+      if (!event.date) return true;
       const eventDate = new Date(`${event.date}T00:00:00`);
       return eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate()) && eventDate <= maxDate;
     })
@@ -1692,10 +1914,13 @@ const renderEvents = () => {
       eventsList.innerHTML = `<div class="event-empty">${getDynamicLabel("noEvents")}</div>`;
     } else {
       events.forEach((event) => {
-        const date = formatEventDate(event.date);
         const card = document.createElement("article");
-        card.className = "event-card event-card-cover custom-event";
-        card.innerHTML = `<img class="event-cover-image" src="${escapeHtml(event.image)}" alt="${escapeHtml(getLocalizedRecordField(event, "title"))}" loading="lazy" /><span class="event-cover-date">${date.day} ${date.month}</span><div class="event-cover-content"><p class="tag">${escapeHtml(getLocalizedRecordField(event, "tag") || getDynamicLabel("event"))}</p><h3>${escapeHtml(getLocalizedRecordField(event, "title"))}</h3><p class="event-description">${escapeHtml(getLocalizedRecordField(event, "description"))}</p><p class="event-meta">${escapeHtml(formatEventTime(event.time))}</p></div>`;
+        card.className = `event-card event-card-cover custom-event${event.dimImage === false ? " event-card-no-dimming" : ""}`;
+        card.style.setProperty("--event-bg", `url("${String(event.image || "").replace(/["\\\n\r]/g, "")}")`);
+        const date = event.date ? formatEventDate(event.date) : null;
+        const description = getLocalizedRecordField(event, "description");
+        const time = formatEventTime(event.time);
+        card.innerHTML = `<img class="event-cover-image" src="${escapeHtml(event.image)}" alt="${escapeHtml(getLocalizedRecordField(event, "title"))}" loading="lazy" />${date ? `<span class="event-cover-date">${date.day} ${date.month}</span>` : ""}<div class="event-cover-content">${getLocalizedRecordField(event, "tag") ? `<p class="tag">${escapeHtml(getLocalizedRecordField(event, "tag"))}</p>` : ""}<h3>${escapeHtml(getLocalizedRecordField(event, "title"))}</h3>${description ? `<p class="event-description">${escapeHtml(description)}</p>` : ""}${time ? `<p class="event-meta">${escapeHtml(time)}</p>` : ""}</div>`;
         eventsList.append(card);
       });
     }
@@ -1707,7 +1932,7 @@ const renderEvents = () => {
     adminEventsList.innerHTML = sharedEventsLoadError
       ? `<p class="admin-record-empty form-message-error">${escapeHtml(sharedEventsLoadError.message)}</p>`
       : allEvents.length
-      ? allEvents.map((event) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(event, "title"))}</strong><span>${escapeHtml(event.date)} · ${escapeHtml(formatEventTime(event.time))}</span></div><button type="button" data-delete-event="${escapeHtml(event.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(event, "event")}</article>`).join("")
+      ? allEvents.map((event) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(event, "title"))}</strong><span>${escapeHtml([event.date, formatEventTime(event.time)].filter(Boolean).join(" · ") || ({ ru: "Без даты", nl: "Geen datum", en: "No date" }[getCurrentLanguage()]))}</span></div><button type="button" data-delete-event="${escapeHtml(event.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(event, "event")}</article>`).join("")
       : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
 
     bindRecordEditors(adminEventsList, null, "event", renderEvents);
@@ -1759,16 +1984,16 @@ if (leaderForm) {
 
     const formData = new FormData(leaderForm);
     try {
-      const image = await prepareUploadedImage(formData.get("image"));
+      const uploadedImage = await prepareUploadedImage(formData.get("image"));
       const leader = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         title: String(formData.get("title") || "").trim(),
         tag: String(formData.get("tag") || "").trim(),
         description: String(formData.get("description") || "").trim(),
-        translations: createRecordTranslations(formData),
-        image: image || "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
+        translations: await createRecordTranslations(formData),
+        image: uploadedImage.dataUrl || "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
       };
-      if (saveAdminRecord(leaderStorageKey, leader, messageElement, "Лидер добавлен на сайт.", renderLeaders)) {
+      if (await saveAdminRecord(leaderStorageKey, leader, messageElement, "Лидер добавлен на сайт.", renderLeaders)) {
         leaderForm.reset();
       }
     } catch (error) {
@@ -1790,16 +2015,16 @@ const bindDirectoryForm = (form, storageKey, messageId, render, type) => {
     const formData = new FormData(form);
     try {
       const isPresbyter = type === "presbyter";
-      const [image, spouseImage] = await Promise.all([
+      const [uploadedImage, uploadedSpouseImage] = await Promise.all([
         prepareUploadedImage(formData.get("image")),
-        isPresbyter ? prepareUploadedImage(formData.get("spouseImage")) : "",
+        isPresbyter ? prepareUploadedImage(formData.get("spouseImage")) : Promise.resolve({ dataUrl: "", aspectRatio: null }),
       ]);
       const record = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         description: isPresbyter ? "" : String(formData.get("description") || "").trim(),
-        translations: isPresbyter ? {} : createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
-        image: image || (isPresbyter ? "" : "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80"),
-        ...(isPresbyter ? { spouseImage: spouseImage || "" } : {}),
+        translations: isPresbyter ? {} : await createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
+        image: uploadedImage.dataUrl || (isPresbyter ? "" : "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80"),
+        ...(isPresbyter ? { spouseImage: uploadedSpouseImage.dataUrl } : {}),
       };
       if (type === "homeGroup") {
         record.leader = String(formData.get("leader") || "").trim();
@@ -1815,12 +2040,12 @@ const bindDirectoryForm = (form, storageKey, messageId, render, type) => {
         record.wifeLastName = String(formData.get("wifeLastName") || "").trim();
         record.title = getPresbyterFamilyTitle(record);
         record.tag = "Пресвитерская семья";
-        if (!record.husbandFirstName || !record.husbandLastName || !record.wifeFirstName || !record.wifeLastName || !image || !spouseImage) {
+        if (!record.husbandFirstName || !record.husbandLastName || !record.wifeFirstName || !record.wifeLastName || !uploadedImage.dataUrl || !uploadedSpouseImage.dataUrl) {
           throw new Error("Заполните имя и фамилию обоих супругов и добавьте обе фотографии.");
         }
       }
       const successMessage = type === "homeGroup" ? getDynamicLabel("homeGroupAdded") : getDynamicLabel("presbyterAdded");
-      if (saveAdminRecord(storageKey, record, message, successMessage, render)) form.reset();
+      if (await saveAdminRecord(storageKey, record, message, successMessage, render)) form.reset();
     } catch (error) {
       message.classList.add("form-message-error");
       message.textContent = error instanceof Error ? error.message : `${getDynamicLabel("createRecordError")} ${getDynamicLabel(type)}.`;
@@ -1844,7 +2069,7 @@ if (eventForm) {
       if (!await sharedEventsReady && !await loadSharedEvents()) {
         throw sharedEventsLoadError || new Error("Не удалось подключиться к серверу событий.");
       }
-      const image = await prepareUploadedImage(formData.get("image"));
+      const uploadedImage = await prepareUploadedImage(formData.get("image"));
       const event = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         title: String(formData.get("title") || "").trim(),
@@ -1852,8 +2077,10 @@ if (eventForm) {
         time: String(formData.get("time") || ""),
         tag: String(formData.get("tag") || "").trim(),
         description: String(formData.get("description") || "").trim(),
-        translations: createRecordTranslations(formData),
-        image: image || "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&w=900&q=80",
+        translations: await createRecordTranslations(formData),
+        image: uploadedImage.dataUrl || "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&w=900&q=80",
+        imageAspectRatio: 0.8,
+        dimImage: formData.get("dimImage") === "on",
       };
       const result = await requestApi("events.php", { method: "POST", body: JSON.stringify(event) });
       sharedEvents = result.events;
@@ -1878,13 +2105,13 @@ if (galleryForm && galleryFormMessage) {
     try {
       await sharedGalleryReady;
       if (sharedGalleryLoadError) throw sharedGalleryLoadError;
-      const image = await prepareUploadedImage(fileInput?.files?.[0]);
-      if (!image) throw new Error("Выберите фотографию перед добавлением.");
+      const uploadedImage = await prepareUploadedImage(fileInput?.files?.[0]);
+      if (!uploadedImage.dataUrl) throw new Error("Выберите фотографию перед добавлением.");
 
       const photo = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         createdAt: new Date().toISOString(),
-        image,
+        image: uploadedImage.dataUrl,
       };
       const result = await requestApi("gallery.php", {
         method: "POST",
@@ -1912,6 +2139,10 @@ if (exportBackupButton) {
       backupMessage.textContent = "Подготавливается резервная копия…";
     }
     try {
+      await sharedEventsReady;
+      if (sharedEventsLoadError) throw sharedEventsLoadError;
+      await sharedContentReady;
+      if (sharedContentLoadError) throw sharedContentLoadError;
       await sharedGalleryReady;
       if (sharedGalleryLoadError) throw sharedGalleryLoadError;
       await downloadBackup();
@@ -1940,24 +2171,46 @@ if (importBackupInput) {
         const homeGroups = normalizeDirectoryBackupItems(backup.homeGroups, "домашних групп", homeGroupStorageKey);
         const presbyters = normalizeDirectoryBackupItems(backup.presbyters, "пресвитеров", presbyterStorageKey);
         const gallery = normalizeGalleryBackupItems(backup.gallery);
-        if (!window.confirm(`Заменить текущие данные?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФотографии галереи: ${gallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
+        const pageVisibility = normalizePageVisibility(backup.pageVisibility || sharedContent.pageVisibility);
+        if (!window.confirm(`Заменить текущие данные на сервере?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФотографии галереи: ${gallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
+        await sharedEventsReady;
+        if (sharedEventsLoadError) throw sharedEventsLoadError;
         await sharedGalleryReady;
         if (sharedGalleryLoadError) throw sharedGalleryLoadError;
+        await sharedContentReady;
+        if (sharedContentLoadError) throw sharedContentLoadError;
         if (!await downloadBackup(true)) throw new Error("Не удалось создать резервную копию перед импортом.");
         const result = await requestApi("events.php", {
           method: "PUT",
           body: JSON.stringify({ events }),
         });
         sharedEvents = result.events;
-        localStorage.setItem(leaderStorageKey, JSON.stringify(leaders));
-        localStorage.setItem(homeGroupStorageKey, JSON.stringify(homeGroups));
-        localStorage.setItem(presbyterStorageKey, JSON.stringify(presbyters));
+        await replaceSharedRecords(leaderStorageKey, leaders);
+        await replaceSharedRecords(homeGroupStorageKey, homeGroups);
+        await replaceSharedRecords(presbyterStorageKey, presbyters);
+        const visibilityResult = await requestApi("content.php?collection=pageVisibility", {
+          method: "PUT",
+          body: JSON.stringify({ pageVisibility }),
+        });
+        sharedContent.pageVisibility = normalizePageVisibility(visibilityResult.pageVisibility);
         await replaceSharedGalleryPhotos(gallery);
+        for (const storageKey of contentCollectionByStorageKey.keys()) localStorage.removeItem(storageKey);
         localStorage.removeItem(galleryStorageKey);
         sharedEventsReady = loadSharedEvents();
-        renderLeaders();
-        renderHomeGroups();
-        renderPresbyters();
+        sharedContentReady = loadSharedContent()
+          .then(() => {
+            sharedContentLoadError = null;
+            renderLeaders();
+            renderHomeGroups();
+            renderPresbyters();
+          })
+          .catch((error) => {
+            sharedContentLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общее содержимое сайта.");
+            renderLeaders();
+            renderHomeGroups();
+            renderPresbyters();
+            console.error("Не удалось загрузить общее содержимое сайта.", sharedContentLoadError);
+          });
         renderGallery();
         if (backupMessage) backupMessage.textContent = "Данные успешно восстановлены.";
       } catch (error) {

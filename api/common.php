@@ -205,14 +205,16 @@ function apiValidateEvent(array $event): array
         apiRespond(422, ['error' => 'Некорректный идентификатор события.']);
     }
 
-    $date = $text('date', 10, true);
-    $dateParts = explode('-', $date);
-    if (count($dateParts) !== 3 || !checkdate((int) ($dateParts[1] ?? 0), (int) ($dateParts[2] ?? 0), (int) ($dateParts[0] ?? 0))) {
-        apiRespond(422, ['error' => 'Укажите корректную дату события.']);
+    $date = $text('date', 10);
+    if ($date !== '') {
+        $dateParts = explode('-', $date);
+        if (count($dateParts) !== 3 || !checkdate((int) ($dateParts[1] ?? 0), (int) ($dateParts[2] ?? 0), (int) ($dateParts[0] ?? 0))) {
+            apiRespond(422, ['error' => 'Укажите корректную дату события.']);
+        }
     }
 
-    $time = $text('time', 5, true);
-    if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $time)) {
+    $time = $text('time', 5);
+    if ($time !== '' && !preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $time)) {
         apiRespond(422, ['error' => 'Укажите время в формате 24 часа, например 18:30.']);
     }
 
@@ -243,14 +245,25 @@ function apiValidateEvent(array $event): array
         apiRespond(422, ['error' => 'Фото события должно быть изображением или HTTPS-ссылкой.']);
     }
 
+    $imageAspectRatio = $event['imageAspectRatio'] ?? 0.8;
+    if (!is_numeric($imageAspectRatio) || (float) $imageAspectRatio < 0.2 || (float) $imageAspectRatio > 5) {
+        apiRespond(422, ['error' => 'Некорректное соотношение сторон фотографии события.']);
+    }
+    $dimImage = $event['dimImage'] ?? true;
+    if (!is_bool($dimImage)) {
+        apiRespond(422, ['error' => 'Некорректная настройка затемнения фотографии события.']);
+    }
+
     return [
         'id' => $id,
         'title' => $text('title', 600, true),
         'date' => $date,
         'time' => $time,
         'tag' => $text('tag', 300),
-        'description' => $text('description', 12000, true),
+        'description' => $text('description', 12000),
         'translations' => $normalizedTranslations,
         'image' => $image,
+        'imageAspectRatio' => round((float) $imageAspectRatio, 4),
+        'dimImage' => $dimImage,
     ];
 }
