@@ -256,7 +256,7 @@ function apiValidateEvent(array $event): array
 
     return [
         'id' => $id,
-        'title' => $text('title', 600, true),
+        'title' => $text('title', 600),
         'date' => $date,
         'time' => $time,
         'tag' => $text('tag', 300),
