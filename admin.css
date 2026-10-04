@@ -80,33 +80,126 @@
 }
 
 .holiday-gallery-title-fields {
+  background: #fff;
   border: 1px solid #d9e1eb;
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(20, 43, 74, .05);
   margin: 0;
-  padding: 18px;
+  min-width: 0;
+  padding: 22px;
 }
 
 .holiday-gallery-title-fields legend {
-  color: #142b4a;
-  font-size: 14px;
+  background: #142b4a;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 10px;
   font-weight: 700;
-  padding: 0 8px;
+  letter-spacing: .12em;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.holiday-gallery-title-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 14px;
+  margin: 4px 0 20px;
+}
+
+.holiday-gallery-title-icon {
+  align-items: center;
+  background: #f3c94f;
+  border-radius: 50%;
+  color: #142b4a;
+  display: flex;
+  flex: 0 0 42px;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  height: 42px;
+  justify-content: center;
+}
+
+.holiday-gallery-title-heading h3 {
+  color: #142b4a;
+  font-size: 18px;
+  letter-spacing: -.02em;
+  margin: 0 0 5px;
+}
+
+.holiday-gallery-title-heading p {
+  color: #64738a;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 600px;
+}
+
+.holiday-gallery-title-languages {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .holiday-gallery-title-fields label {
-  color: #64738a;
+  background: #f6f8fb;
+  border: 1px solid #e3e9f0;
+  border-radius: 5px;
+  color: #142b4a;
   display: grid;
-  font-size: 13px;
-  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
 }
 
 .holiday-gallery-title-fields input {
+  background: #fff;
   border: 1px solid #cfdae7;
+  border-radius: 3px;
+  color: #142b4a;
   font: inherit;
   min-width: 0;
-  padding: 12px;
+  padding: 11px 12px;
+  transition: border-color .18s ease, box-shadow .18s ease;
+  width: 100%;
+}
+
+.holiday-gallery-title-fields input:focus {
+  border-color: #b08213;
+  box-shadow: 0 0 0 3px rgba(243, 201, 79, .22);
+  outline: none;
+}
+
+.holiday-gallery-language {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.holiday-gallery-language b {
+  align-items: center;
+  background: #eaf0f7;
+  border-radius: 3px;
+  color: #142b4a;
+  display: inline-flex;
+  font-size: 9px;
+  height: 22px;
+  justify-content: center;
+  letter-spacing: .08em;
+  width: 28px;
+}
+
+@media (max-width: 800px) {
+  .holiday-gallery-title-fields {
+    padding: 18px;
+  }
+
+  .holiday-gallery-title-languages {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .page-visibility-card .form-message {

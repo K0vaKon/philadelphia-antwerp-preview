@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="theme.css?v=server-content-v1-20260929" />
-    <link rel="stylesheet" href="admin.css?v=server-content-v1-20260929" />
+    <link rel="stylesheet" href="admin.css?v=holiday-gallery-title-style-v1-20261004" />
     <link rel="stylesheet" href="login.css?v=shared-events-v1-20260929" />
     <link rel="stylesheet" href="i18n.css" />
   </head>
@@ -134,10 +134,19 @@
             <p>Настройки сохраняются на сервере и сразу применяются для всех посетителей сайта.</p>
             <div class="page-visibility-list" id="page-visibility-list"></div>
             <fieldset class="holiday-gallery-title-fields" id="holiday-gallery-title-fields">
-              <legend>Название галереи праздников</legend>
-              <label>Русский<input data-holiday-gallery-title="ru" maxlength="120" required /></label>
-              <label>Nederlands<input data-holiday-gallery-title="nl" maxlength="120" required /></label>
-              <label>English<input data-holiday-gallery-title="en" maxlength="120" required /></label>
+              <legend>Название страницы</legend>
+              <div class="holiday-gallery-title-heading">
+                <span class="holiday-gallery-title-icon" aria-hidden="true">Aa</span>
+                <div>
+                  <h3>Название галереи праздников</h3>
+                  <p>Эта подпись появится в меню сайта и в заголовке страницы. Укажите её для каждого языка.</p>
+                </div>
+              </div>
+              <div class="holiday-gallery-title-languages">
+                <label><span class="holiday-gallery-language"><b>RU</b> Русский</span><input data-holiday-gallery-title="ru" maxlength="120" required placeholder="Например, Галерея праздников" /></label>
+                <label><span class="holiday-gallery-language"><b>NL</b> Nederlands</span><input data-holiday-gallery-title="nl" maxlength="120" required placeholder="Bijvoorbeeld, Feestgalerij" /></label>
+                <label><span class="holiday-gallery-language"><b>EN</b> English</span><input data-holiday-gallery-title="en" maxlength="120" required placeholder="For example, Holiday gallery" /></label>
+              </div>
             </fieldset>
             <button class="button button-dark" id="save-page-visibility" type="button">Сохранить настройки страниц <span>↗</span></button>
             <p class="form-message" id="page-visibility-message" role="status"></p>
