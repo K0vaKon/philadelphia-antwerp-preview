@@ -297,13 +297,18 @@
 }
 
 @media (max-width: 800px) {
+  .gallery-section.section {
+    padding-left: 3%;
+    padding-right: 3%;
+  }
+
   .gallery-masonry {
     columns: 2;
-    column-gap: 12px;
+    column-gap: 8px;
   }
 
   .gallery-photo {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .admin-gallery-photo {
