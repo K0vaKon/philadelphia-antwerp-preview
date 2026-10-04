@@ -79,6 +79,36 @@
   font-weight: 600;
 }
 
+.holiday-gallery-title-fields {
+  border: 1px solid #d9e1eb;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 18px;
+}
+
+.holiday-gallery-title-fields legend {
+  color: #142b4a;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 8px;
+}
+
+.holiday-gallery-title-fields label {
+  color: #64738a;
+  display: grid;
+  font-size: 13px;
+  gap: 7px;
+}
+
+.holiday-gallery-title-fields input {
+  border: 1px solid #cfdae7;
+  font: inherit;
+  min-width: 0;
+  padding: 12px;
+}
+
 .page-visibility-card .form-message {
   margin: -12px 0 0;
 }
@@ -141,6 +171,7 @@
   .admin-record-editor fieldset{grid-template-columns:1fr}
   .page-visibility-card{padding:22px}
   .page-visibility-card .button{width:100%}
+  .holiday-gallery-title-fields{grid-template-columns:1fr}
   .admin-tabs{margin:0 -6% 28px;padding:8px 6%}
   .admin-tabs button{padding:11px 13px}
 }

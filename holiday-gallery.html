@@ -3,52 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Фотографии и моменты жизни церкви Филадельфия в Антверпене." />
-    <title>Галерея — Филадельфия</title>
+    <meta name="description" content="Праздничные фотографии церкви Филадельфия в Антверпене." />
+    <title>Галерея праздников — Филадельфия</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="theme.css?v=server-content-v1-20260929" />
+    <link rel="stylesheet" href="theme.css?v=holiday-gallery-v1" />
     <link rel="stylesheet" href="gallery.css?v=gallery-mobile-dots-stay-v2-20260929" />
     <link rel="stylesheet" href="i18n.css" />
   </head>
-  <body>
+  <body data-gallery-collection="holidays">
     <header class="site-header inner-header">
-      <a class="brand" href="index.html">
-        <img class="brand-logo" src="logo.png" alt="Логотип церкви Филадельфия" />
-        <span><strong>Филадельфия</strong><small>церковь в Антверпене</small></span>
-      </a>
+      <a class="brand" href="index.html"><img class="brand-logo" src="logo.png" alt="Логотип церкви Филадельфия" /><span><strong>Филадельфия</strong><small>церковь в Антверпене</small></span></a>
       <nav class="main-nav" aria-label="Основная навигация">
         <a href="index.html">Главная</a>
         <a href="about.html">О нас</a>
         <a href="leaders.html">Служения</a>
-        <a class="active" href="gallery.html">Галерея</a>
+        <a href="gallery.html">Галерея</a>
+        <a class="active" href="holiday-gallery.html">Галерея праздников</a>
         <a class="nav-button" href="index.html#visit">Мы ждём вас <span>↗</span></a>
       </nav>
       <button class="menu-toggle" aria-label="Открыть меню" aria-expanded="false">☰</button>
     </header>
-
     <main class="gallery-page">
       <section class="page-hero gallery-hero">
-        <div><p class="eyebrow">Наша жизнь вместе</p><h1>Галерея<br /><em>моментов.</em></h1></div>
-        <p>Встречи, служения и тёплые мгновения нашей церковной семьи.</p>
+        <div><p class="eyebrow">Праздничные моменты</p><h1 id="holiday-gallery-title">Галерея<br /><em>праздников.</em></h1></div>
+        <p>Праздники, встречи и особенные моменты нашей церковной семьи.</p>
       </section>
       <section class="gallery-section section">
         <div class="gallery-masonry" id="gallery-list" aria-live="polite"></div>
         <button class="button button-dark gallery-load-more" id="gallery-load-more" type="button">Показать ещё фотографии</button>
       </section>
     </main>
-
     <footer class="site-footer">
       <div class="footer-main">
         <div><a class="brand footer-brand" href="index.html"><img class="brand-logo" src="logo.png" alt="Логотип церкви Филадельфия" /><span><strong>Филадельфия</strong><small>церковь в Антверпене</small></span></a><p>Филадельфия —<br />братская любовь.</p></div>
-        <div class="footer-links">
-          <div><span>Навигация</span><a href="index.html">Главная</a><a href="about.html">О нас</a><a href="leaders.html">Служения</a><a href="gallery.html">Галерея</a></div>
-          <div><span>Связаться</span><a href="mailto:kerkphiladelphia@gmail.com">kerkphiladelphia@gmail.com</a><a href="tel:+32484156452">+32 484/15-64-52</a><a href="tel:+32484162155">+32 484/16-21-55</a><a href="https://www.youtube.com/@Church_P" target="_blank" rel="noreferrer">Youtube ↗</a></div>
-        </div>
+        <div class="footer-links"><div><span>Навигация</span><a href="index.html">Главная</a><a href="leaders.html">Служения</a><a href="gallery.html">Галерея</a></div></div>
       </div>
-      <div class="donations footer-donations"><strong>Пожертвование для церкви</strong><span>VZW CHRISTENGEMEENTE PHILADELPHIA</span><b>BE55 7310 7718 0144</b><strong>Для служения детям</strong><span>Kinderfond (Обет веры)</span><b>BE44 7310 7718 0245</b></div>
       <div class="footer-bottom"><span>© 2026 Церковь Филадельфия</span><span>Антверпен, Бельгия</span></div>
     </footer>
     <script src="script.js?v=holiday-galleries-bulk-v1"></script>

@@ -1,5 +1,11 @@
 {
   "about": true,
   "leaders": true,
-  "gallery": true
+  "gallery": true,
+  "holidayGallery": false,
+  "holidayGalleryTitles": {
+    "ru": "Галерея праздников",
+    "nl": "Feestgalerij",
+    "en": "Holiday gallery"
+  }
 }

@@ -13,9 +13,10 @@ $recordCollections = [
     'homeGroups' => ['leader', 'location', 'day', 'description'],
     'presbyters' => ['title', 'tag', 'description', 'husbandFirstName', 'husbandLastName', 'wifeFirstName', 'wifeLastName'],
 ];
-$defaultPageVisibility = ['about' => true, 'leaders' => true, 'gallery' => true];
+$defaultPageVisibility = ['about' => true, 'leaders' => true, 'gallery' => true, 'holidayGallery' => false];
+$defaultHolidayGalleryTitles = ['ru' => 'Галерея праздников', 'nl' => 'Feestgalerij', 'en' => 'Holiday gallery'];
 
-$readContent = static function () use ($dataPath, $recordCollections, $defaultPageVisibility): array {
+$readContent = static function () use ($dataPath, $recordCollections, $defaultPageVisibility, $defaultHolidayGalleryTitles): array {
     $content = apiReadJsonFile($dataPath, []);
     foreach ($recordCollections as $name => $_) {
         if (!isset($content[$name])) $content[$name] = [];
@@ -44,6 +45,14 @@ $readContent = static function () use ($dataPath, $recordCollections, $defaultPa
         if (!is_bool($visibility[$page] ?? null)) {
             $visibility[$page] = $default;
         }
+    }
+    $titles = $visibility['holidayGalleryTitles'] ?? [];
+    if (!is_array($titles)) $titles = [];
+    foreach ($defaultHolidayGalleryTitles as $language => $default) {
+        $title = $titles[$language] ?? $default;
+        $visibility['holidayGalleryTitles'][$language] = is_string($title) && trim($title) !== '' && strlen($title) <= 480
+            ? trim($title)
+            : $default;
     }
     $content['pageVisibility'] = $visibility;
     return $content;
@@ -135,12 +144,24 @@ if ($collection === 'pageVisibility') {
     apiRequireAuthenticated();
     $input = apiReadJsonBody();
     $visibility = $input['pageVisibility'] ?? null;
-    if (!is_array($visibility) || array_diff(array_keys($visibility), array_keys($defaultPageVisibility)) !== []) {
+    if (!is_array($visibility) || array_diff(array_keys($visibility), array_merge(array_keys($defaultPageVisibility), ['holidayGalleryTitles'])) !== []) {
         apiRespond(422, ['error' => 'Некорректные настройки видимости страниц.']);
     }
     foreach ($defaultPageVisibility as $page => $default) {
         if (!is_bool($visibility[$page] ?? null)) apiRespond(422, ['error' => 'Укажите видимость всех страниц.']);
     }
+    $titles = $visibility['holidayGalleryTitles'] ?? $defaultHolidayGalleryTitles;
+    if (!is_array($titles) || array_diff(array_keys($titles), ['ru', 'nl', 'en']) !== []) {
+        apiRespond(422, ['error' => 'Укажите названия галереи праздников на доступных языках.']);
+    }
+    foreach ($defaultHolidayGalleryTitles as $language => $default) {
+        $title = $titles[$language] ?? $default;
+        if (!is_string($title) || trim($title) === '' || strlen($title) > 480) {
+            apiRespond(422, ['error' => 'Название галереи праздников должно содержать от 1 до 120 символов.']);
+        }
+        $titles[$language] = trim($title);
+    }
+    $visibility['holidayGalleryTitles'] = $titles;
     $lock = fopen($lockPath, 'c');
     if ($lock === false || !flock($lock, LOCK_EX)) {
         error_log('Philadelphia API could not lock site content.');

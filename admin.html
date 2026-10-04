@@ -133,6 +133,12 @@
             <p>Выберите страницы, которые должны быть доступны посетителям.</p>
             <p>Настройки сохраняются на сервере и сразу применяются для всех посетителей сайта.</p>
             <div class="page-visibility-list" id="page-visibility-list"></div>
+            <fieldset class="holiday-gallery-title-fields" id="holiday-gallery-title-fields">
+              <legend>Название галереи праздников</legend>
+              <label>Русский<input data-holiday-gallery-title="ru" maxlength="120" required /></label>
+              <label>Nederlands<input data-holiday-gallery-title="nl" maxlength="120" required /></label>
+              <label>English<input data-holiday-gallery-title="en" maxlength="120" required /></label>
+            </fieldset>
             <button class="button button-dark" id="save-page-visibility" type="button">Сохранить настройки страниц <span>↗</span></button>
             <p class="form-message" id="page-visibility-message" role="status"></p>
           </div>
@@ -179,7 +185,7 @@
         </form>
       </section>
     </main>
-    <script src="script.js?v=auto-translate-20260930"></script>
+    <script src="script.js?v=holiday-galleries-bulk-v1"></script>
     <script src="i18n.js?v=server-content-v1-20260929"></script>
   </body>
 </html>

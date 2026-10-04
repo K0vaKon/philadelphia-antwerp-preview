@@ -3,9 +3,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/common.php';
 
-$dataPath = PHILADELPHIA_API_STORAGE . '/gallery.json';
-$lockPath = PHILADELPHIA_API_STORAGE . '/gallery.lock';
-$imageDirectory = PHILADELPHIA_API_STORAGE . '/gallery-images';
+$collection = is_string($_GET['collection'] ?? null) ? $_GET['collection'] : 'gallery';
+if (!in_array($collection, ['gallery', 'holidays'], true)) {
+    apiRespond(400, ['error' => 'Неизвестная галерея.']);
+}
+$dataPath = PHILADELPHIA_API_STORAGE . '/' . ($collection === 'holidays' ? 'holiday-gallery.json' : 'gallery.json');
+$lockPath = PHILADELPHIA_API_STORAGE . '/' . ($collection === 'holidays' ? 'holiday-gallery.lock' : 'gallery.lock');
+$imageDirectory = PHILADELPHIA_API_STORAGE . '/' . ($collection === 'holidays' ? 'holiday-gallery-images' : 'gallery-images');
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 $validatePhotos = static function (array $photos): array {
@@ -29,12 +33,12 @@ $validatePhotos = static function (array $photos): array {
     return $photos;
 };
 
-$publicPhotos = static function (array $photos): array {
+$publicPhotos = static function (array $photos) use ($collection): array {
     return array_map(
         static fn (array $photo): array => [
             'id' => $photo['id'],
             'createdAt' => $photo['createdAt'],
-            'image' => 'api/gallery-image.php?id=' . rawurlencode($photo['id']) . '&v=' . rawurlencode($photo['updatedAt']),
+            'image' => 'api/gallery-image.php?collection=' . rawurlencode($collection) . '&id=' . rawurlencode($photo['id']) . '&v=' . rawurlencode($photo['updatedAt']),
         ],
         $photos
     );

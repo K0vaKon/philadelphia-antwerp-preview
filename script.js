@@ -104,14 +104,21 @@ const showAdmin = () => {
       renderPresbyters();
       console.error("Не удалось загрузить общее содержимое сайта.", sharedContentLoadError);
     });
-  sharedGalleryReady = loadSharedGallery(true)
+  sharedGalleryReady = loadSharedGallery(true, "gallery")
     .then(() => renderGallery())
     .catch((error) => {
       sharedGalleryLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общую галерею.");
       renderGallery();
       console.error("Не удалось загрузить общую галерею с сервера.", sharedGalleryLoadError);
     });
-  Promise.all([sharedContentReady, sharedGalleryReady]).finally(() => {
+  sharedHolidayGalleryReady = loadSharedGallery(false, "holidays")
+    .then(() => renderGallery())
+    .catch((error) => {
+      sharedHolidayGalleryLoadError = error instanceof Error ? error : new Error("Не удалось загрузить галерею праздников.");
+      renderGallery();
+      console.error("Не удалось загрузить галерею праздников с сервера.", sharedHolidayGalleryLoadError);
+    });
+  Promise.all([sharedContentReady, sharedGalleryReady, sharedHolidayGalleryReady]).finally(() => {
     if (adminContent) adminContent.hidden = false;
   });
 };
@@ -256,6 +263,10 @@ const pageVisibilityPages = {
     file: "gallery.html",
     label: { ru: "Галерея", nl: "Galerij", en: "Gallery" },
   },
+  holidayGallery: {
+    file: "holiday-gallery.html",
+    label: { ru: "Галерея праздников", nl: "Feestgalerij", en: "Holiday gallery" },
+  },
 };
 const pageVisibilityMessages = {
   saved: {
@@ -273,13 +284,26 @@ const normalizePageVisibility = (value) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Некорректный формат настроек видимости страниц.");
   }
-  return Object.fromEntries(Object.keys(pageVisibilityPages).map((key) => {
-    const isVisible = value[key] ?? true;
+  const normalized = Object.fromEntries(Object.keys(pageVisibilityPages).map((key) => {
+    const isVisible = value[key] ?? (key === "holidayGallery" ? false : true);
     if (typeof isVisible !== "boolean") {
       throw new Error(`Некорректное значение видимости страницы: ${key}`);
     }
     return [key, isVisible];
   }));
+  const defaultTitles = { ru: "Галерея праздников", nl: "Feestgalerij", en: "Holiday gallery" };
+  const titles = value.holidayGalleryTitles ?? defaultTitles;
+  if (!titles || typeof titles !== "object" || Array.isArray(titles)) {
+    throw new Error("Некорректные названия галереи праздников.");
+  }
+  normalized.holidayGalleryTitles = Object.fromEntries(Object.entries(defaultTitles).map(([language, fallback]) => {
+    const title = titles[language] ?? fallback;
+    if (typeof title !== "string" || !title.trim() || title.length > 120) {
+      throw new Error("Название галереи праздников должно содержать от 1 до 120 символов.");
+    }
+    return [language, title.trim()];
+  }));
+  return normalized;
 };
 
 const initializePageVisibility = async () => {
@@ -293,7 +317,7 @@ const initializePageVisibility = async () => {
   pageVisibilityStylesheet.href = "page-visibility.css?v=page-visibility-v1";
   document.head.append(pageVisibilityStylesheet);
 
-  let publishedVisibility = Object.fromEntries(Object.keys(pageVisibilityPages).map((key) => [key, true]));
+  let publishedVisibility = normalizePageVisibility({});
   try {
     const settings = await requestApi("content.php?collection=pageVisibility");
     publishedVisibility = normalizePageVisibility(settings.pageVisibility);
@@ -319,14 +343,27 @@ const initializePageVisibility = async () => {
       input.checked = publishedVisibility[key];
       input.dataset.pageVisibility = key;
       const name = document.createElement("span");
-      name.textContent = page.label[pageLanguage];
+      name.textContent = key === "holidayGallery"
+        ? publishedVisibility.holidayGalleryTitles[pageLanguage]
+        : page.label[pageLanguage];
       label.append(input, name);
       return label;
     }));
+    const titleFields = document.querySelector("#holiday-gallery-title-fields");
+    if (titleFields) {
+      const titles = publishedVisibility.holidayGalleryTitles;
+      titleFields.querySelectorAll("[data-holiday-gallery-title]").forEach((input) => {
+        input.value = titles[input.dataset.holidayGalleryTitle] || "";
+      });
+      titleFields.addEventListener("input", () => { statusMessage.textContent = ""; });
+    }
     const readDraft = () => Object.fromEntries([...visibilityList.querySelectorAll("[data-page-visibility]")].map((input) => [
       input.dataset.pageVisibility,
       input.checked,
-    ]));
+    ]).concat([["holidayGalleryTitles", Object.fromEntries([...document.querySelectorAll("[data-holiday-gallery-title]")].map((input) => [
+      input.dataset.holidayGalleryTitle,
+      input.value.trim(),
+    ]))]]));
     visibilityList.addEventListener("change", () => {
       statusMessage.textContent = "";
     });
@@ -351,6 +388,27 @@ const initializePageVisibility = async () => {
     return;
   }
   if (isAdminPage) return;
+
+  const holidayTitle = publishedVisibility.holidayGalleryTitles[pageLanguage];
+  document.querySelectorAll('a[href="holiday-gallery.html"]').forEach((link) => {
+    link.textContent = holidayTitle;
+  });
+  if (document.body.dataset.galleryCollection === "holidays") {
+    const title = document.querySelector("#holiday-gallery-title");
+    if (title) title.textContent = holidayTitle;
+    document.title = `${holidayTitle} — Филадельфия`;
+  }
+  if (publishedVisibility.holidayGallery) {
+    document.querySelectorAll(".main-nav").forEach((nav) => {
+      if (nav.querySelector('a[href="holiday-gallery.html"]')) return;
+      const link = document.createElement("a");
+      link.href = "holiday-gallery.html";
+      link.textContent = holidayTitle;
+      if (document.body.dataset.galleryCollection === "holidays") link.className = "active";
+      const callToAction = nav.querySelector(".nav-button");
+      nav.insertBefore(link, callToAction || null);
+    });
+  }
 
   const currentPage = Object.entries(pageVisibilityPages).find(([, page]) => page.file === location.pathname.split("/").pop());
   if (currentPage && !publishedVisibility[currentPage[0]]) {
@@ -511,6 +569,11 @@ const adminGalleryList = document.querySelector("#admin-gallery-list");
 const galleryCount = document.querySelector("#gallery-count");
 const galleryFormMessage = document.querySelector("#gallery-form-message");
 const galleryLoadMoreButton = document.querySelector("#gallery-load-more");
+const holidayGalleryForm = document.querySelector("#holiday-gallery-form");
+const adminHolidayGalleryList = document.querySelector("#admin-holiday-gallery-list");
+const holidayGalleryCount = document.querySelector("#holiday-gallery-count");
+const holidayGalleryFormMessage = document.querySelector("#holiday-gallery-form-message");
+const galleryCollection = document.body.dataset.galleryCollection === "holidays" ? "holidays" : "gallery";
 const galleryStorageKey = "philadelphia-gallery";
 const contentLanguages = ["nl", "en"];
 const contentCollectionByStorageKey = new Map([
@@ -522,7 +585,13 @@ let sharedContent = {
   leaders: [],
   homeGroups: [],
   presbyters: [],
-  pageVisibility: { about: true, leaders: true, gallery: true },
+  pageVisibility: {
+    about: true,
+    leaders: true,
+    gallery: true,
+    holidayGallery: false,
+    holidayGalleryTitles: { ru: "Галерея праздников", nl: "Feestgalerij", en: "Holiday gallery" },
+  },
 };
 let sharedContentLoadError = null;
 let sharedContentReady = Promise.resolve();
@@ -537,6 +606,9 @@ let galleryRenderedCount = 0;
 let sharedGalleryPhotos = [];
 let sharedGalleryLoadError = null;
 let sharedGalleryReady = Promise.resolve();
+let sharedHolidayGalleryPhotos = [];
+let sharedHolidayGalleryLoadError = null;
+let sharedHolidayGalleryReady = Promise.resolve();
 const exportBackupButton = document.querySelector("#export-backup");
 const importBackupInput = document.querySelector("#import-backup");
 const backupMessage = document.querySelector("#backup-message");
@@ -714,11 +786,13 @@ const normalizeDirectoryBackupItems = (items, type, storageKey) => {
   return normalizeBackupItems(items, type);
 };
 
-const galleryImageAsDataUrl = async (image) => {
+const galleryImageAsDataUrl = async (image, collection = "gallery") => {
   if (typeof image !== "string") throw new Error("В резервной копии найдено некорректное фото.");
   if (image.startsWith("data:image/jpeg;base64,")) return image;
   const imageUrl = new URL(image, location.href);
-  if (imageUrl.origin !== location.origin || !imageUrl.pathname.endsWith("/api/gallery-image.php")) {
+  const expectedCollection = collection === "holidays" ? "holidays" : "gallery";
+  if (imageUrl.origin !== location.origin || !imageUrl.pathname.endsWith("/api/gallery-image.php")
+    || (imageUrl.searchParams.get("collection") || "gallery") !== expectedCollection) {
     throw new Error("Не удалось безопасно прочитать фото галереи. Используйте резервную копию с этого сайта.");
   }
   const response = await fetch(imageUrl, { credentials: "same-origin", cache: "no-store" });
@@ -747,9 +821,13 @@ const createBackup = async () => JSON.stringify({
   homeGroups: readRecords(homeGroupStorageKey),
   presbyters: readRecords(presbyterStorageKey),
   pageVisibility: sharedContent.pageVisibility,
-  gallery: await Promise.all(readGalleryPhotos().map(async (photo) => ({
+  gallery: await Promise.all(readGalleryPhotos("gallery").map(async (photo) => ({
     ...photo,
-    image: await galleryImageAsDataUrl(photo.image),
+    image: await galleryImageAsDataUrl(photo.image, "gallery"),
+  }))),
+  holidayGallery: await Promise.all(readGalleryPhotos("holidays").map(async (photo) => ({
+    ...photo,
+    image: await galleryImageAsDataUrl(photo.image, "holidays"),
   }))),
 }, null, 2);
 
@@ -850,41 +928,52 @@ const loadSharedContent = async (migrateLegacyRecords = false) => {
   return sharedContent;
 };
 
-const readGalleryPhotos = () => {
-  return sharedGalleryPhotos;
+const readGalleryPhotos = (collection = galleryCollection) => {
+  return collection === "holidays" ? sharedHolidayGalleryPhotos : sharedGalleryPhotos;
 };
 
-const replaceSharedGalleryPhotos = async (photos) => {
+const replaceSharedGalleryPhotos = async (photos, collection = "gallery") => {
+  const currentPhotos = () => readGalleryPhotos(collection);
+  const collectionQuery = collection === "holidays" ? "?collection=holidays" : "";
+  const itemQuery = collection === "holidays" ? "&collection=holidays" : "";
   const desiredIds = new Set(photos.map((photo) => photo.id));
   for (const photo of photos) {
-    const image = await galleryImageAsDataUrl(photo.image);
-    const existing = sharedGalleryPhotos.some((item) => item.id === photo.id);
+    const image = await galleryImageAsDataUrl(photo.image, collection);
+    const existing = currentPhotos().some((item) => item.id === photo.id);
     const result = await requestApi(
-      existing ? `gallery.php?id=${encodeURIComponent(photo.id)}` : "gallery.php",
+      existing ? `gallery.php?id=${encodeURIComponent(photo.id)}${itemQuery}` : `gallery.php${collectionQuery}`,
       {
         method: existing ? "PUT" : "POST",
         body: JSON.stringify({ ...photo, image }),
       },
     );
     if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
-    sharedGalleryPhotos = result.photos;
+    if (collection === "holidays") sharedHolidayGalleryPhotos = result.photos;
+    else sharedGalleryPhotos = result.photos;
   }
 
-  for (const photo of [...sharedGalleryPhotos]) {
+  for (const photo of [...currentPhotos()]) {
     if (desiredIds.has(photo.id)) continue;
-    const result = await requestApi(`gallery.php?id=${encodeURIComponent(photo.id)}`, { method: "DELETE" });
+    const result = await requestApi(`gallery.php?id=${encodeURIComponent(photo.id)}${itemQuery}`, { method: "DELETE" });
     if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
-    sharedGalleryPhotos = result.photos;
+    if (collection === "holidays") sharedHolidayGalleryPhotos = result.photos;
+    else sharedGalleryPhotos = result.photos;
   }
 };
 
-const loadSharedGallery = async (migrateLegacyPhotos = false) => {
-  const result = await requestApi("gallery.php");
+const loadSharedGallery = async (migrateLegacyPhotos = false, collection = "gallery") => {
+  const collectionQuery = collection === "holidays" ? "?collection=holidays" : "";
+  const result = await requestApi(`gallery.php${collectionQuery}`);
   if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
-  sharedGalleryPhotos = result.photos;
-  sharedGalleryLoadError = null;
+  if (collection === "holidays") {
+    sharedHolidayGalleryPhotos = result.photos;
+    sharedHolidayGalleryLoadError = null;
+  } else {
+    sharedGalleryPhotos = result.photos;
+    sharedGalleryLoadError = null;
+  }
 
-  if (migrateLegacyPhotos) {
+  if (migrateLegacyPhotos && collection === "gallery") {
     const legacyPhotos = readLegacyRecords(galleryStorageKey);
     const existingIds = new Set(sharedGalleryPhotos.map((photo) => photo.id));
     const photosToMigrate = legacyPhotos.filter((photo) => !existingIds.has(photo.id));
@@ -907,7 +996,7 @@ const loadSharedGallery = async (migrateLegacyPhotos = false) => {
       }
     }
   }
-  return sharedGalleryPhotos;
+  return collection === "holidays" ? sharedHolidayGalleryPhotos : sharedGalleryPhotos;
 };
 
 const renderGallery = () => {
@@ -916,42 +1005,50 @@ const renderGallery = () => {
     galleryRenderedCount = 0;
     galleryList.replaceChildren();
 
-    if (sharedGalleryLoadError) {
-      galleryList.innerHTML = `<p class="gallery-empty">${escapeHtml(sharedGalleryLoadError.message)}</p>`;
+    const loadError = galleryCollection === "holidays" ? sharedHolidayGalleryLoadError : sharedGalleryLoadError;
+    if (loadError) {
+      galleryList.innerHTML = `<p class="gallery-empty">${escapeHtml(loadError.message)}</p>`;
       if (galleryLoadMoreButton) galleryLoadMoreButton.hidden = true;
     } else if (galleryPhotos.length) {
       renderNextGalleryBatch();
     } else if (galleryLoadMoreButton) {
-      galleryList.innerHTML = '<p class="gallery-empty">Пока в галерее нет фотографий.</p>';
+      galleryList.innerHTML = `<p class="gallery-empty">${galleryCollection === "holidays" ? "Пока в галерее праздников нет фотографий." : "Пока в галерее нет фотографий."}</p>`;
       galleryLoadMoreButton.hidden = true;
     } else {
       galleryList.innerHTML = '<p class="gallery-empty">Пока в галерее нет фотографий.</p>';
     }
   }
 
-  if (adminGalleryList) {
-    const photos = readGalleryPhotos().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const renderAdminGalleryList = (container, countElement, photos, loadError, collection) => {
+    if (!container) return;
+    const orderedPhotos = [...photos].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const language = localStorage.getItem("philadelphia-language") || "ru";
     const photoLabel = language === "nl" ? "foto's" : language === "en" ? "photos" : "фото";
-    if (galleryCount) galleryCount.textContent = `${photos.length} ${photoLabel}`;
-    adminGalleryList.innerHTML = sharedGalleryLoadError
-      ? `<p class="admin-record-empty form-message-error">${escapeHtml(sharedGalleryLoadError.message)}</p>`
-      : photos.length
-      ? photos.map((photo) => {
+    if (countElement) countElement.textContent = `${orderedPhotos.length} ${photoLabel}`;
+    container.innerHTML = loadError
+      ? `<p class="admin-record-empty form-message-error">${escapeHtml(loadError.message)}</p>`
+      : orderedPhotos.length
+      ? orderedPhotos.map((photo) => {
         const locale = language === "nl" ? "nl-BE" : language === "en" ? "en-GB" : "ru-RU";
         const date = new Date(photo.createdAt).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
-        return `<article class="admin-event admin-gallery-photo"><img src="${escapeHtml(photo.image)}" alt="Предпросмотр фотографии" loading="lazy" /><div><strong>Фотография</strong><span><span>Добавлена</span> ${date}</span></div><button type="button" data-delete-gallery-photo="${escapeHtml(photo.id)}">Удалить</button></article>`;
+        return `<article class="admin-event admin-gallery-photo"><img src="${escapeHtml(photo.image)}" alt="Предпросмотр фотографии" loading="lazy" /><div><strong>Фотография</strong><span><span>Добавлена</span> ${date}</span></div><button type="button" data-delete-gallery-photo="${escapeHtml(photo.id)}" data-gallery-collection="${collection}">Удалить</button></article>`;
       }).join("")
       : "<p>Пока нет добавленных фотографий.</p>";
 
-    adminGalleryList.querySelectorAll("[data-delete-gallery-photo]").forEach((button) => {
+    container.querySelectorAll("[data-delete-gallery-photo]").forEach((button) => {
       button.addEventListener("click", async () => {
         button.disabled = true;
         try {
-          const result = await requestApi(`gallery.php?id=${encodeURIComponent(button.dataset.deleteGalleryPhoto)}`, { method: "DELETE" });
+          const collectionQuery = collection === "holidays" ? "&collection=holidays" : "";
+          const result = await requestApi(`gallery.php?id=${encodeURIComponent(button.dataset.deleteGalleryPhoto)}${collectionQuery}`, { method: "DELETE" });
           if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
-          sharedGalleryPhotos = result.photos;
-          sharedGalleryLoadError = null;
+          if (collection === "holidays") {
+            sharedHolidayGalleryPhotos = result.photos;
+            sharedHolidayGalleryLoadError = null;
+          } else {
+            sharedGalleryPhotos = result.photos;
+            sharedGalleryLoadError = null;
+          }
           renderGallery();
         } catch (error) {
           console.error("Не удалось удалить фотографию с сервера.", error);
@@ -964,7 +1061,9 @@ const renderGallery = () => {
         }
       });
     });
-  }
+  };
+  renderAdminGalleryList(adminGalleryList, galleryCount, sharedGalleryPhotos, sharedGalleryLoadError, "gallery");
+  renderAdminGalleryList(adminHolidayGalleryList, holidayGalleryCount, sharedHolidayGalleryPhotos, sharedHolidayGalleryLoadError, "holidays");
 };
 
 const renderNextGalleryBatch = () => {
@@ -2095,41 +2194,65 @@ if (eventForm) {
   });
 }
 
-if (galleryForm && galleryFormMessage) {
-  galleryForm.addEventListener("submit", async (submitEvent) => {
+const bindGalleryUploadForm = (form, messageElement, collection) => {
+  if (!form || !messageElement) return;
+  form.addEventListener("submit", async (submitEvent) => {
     submitEvent.preventDefault();
-    galleryFormMessage.classList.remove("form-message-error");
-    galleryFormMessage.textContent = "";
+    messageElement.classList.remove("form-message-error");
+    messageElement.textContent = "";
 
-    const fileInput = galleryForm.querySelector('input[type="file"]');
+    const fileInput = form.querySelector('input[type="file"]');
+    const files = [...(fileInput?.files || [])];
+    const submitButton = form.querySelector('button[type="submit"]');
+    let uploadedCount = 0;
+    if (submitButton) submitButton.disabled = true;
     try {
-      await sharedGalleryReady;
-      if (sharedGalleryLoadError) throw sharedGalleryLoadError;
-      const uploadedImage = await prepareUploadedImage(fileInput?.files?.[0]);
-      if (!uploadedImage.dataUrl) throw new Error("Выберите фотографию перед добавлением.");
+      await (collection === "holidays" ? sharedHolidayGalleryReady : sharedGalleryReady);
+      const loadError = collection === "holidays" ? sharedHolidayGalleryLoadError : sharedGalleryLoadError;
+      if (loadError) throw loadError;
+      if (!files.length) throw new Error("Выберите хотя бы одну фотографию.");
+      const currentPhotos = collection === "holidays" ? sharedHolidayGalleryPhotos : sharedGalleryPhotos;
+      if (currentPhotos.length + files.length > 500) throw new Error("В одной галерее может быть не более 500 фотографий.");
 
-      const photo = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        createdAt: new Date().toISOString(),
-        image: uploadedImage.dataUrl,
-      };
-      const result = await requestApi("gallery.php", {
-        method: "POST",
-        body: JSON.stringify(photo),
-      });
-      if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
-      sharedGalleryPhotos = result.photos;
-      sharedGalleryLoadError = null;
+      for (let index = 0; index < files.length; index += 1) {
+        messageElement.textContent = `Подготовка и загрузка фотографии ${index + 1} из ${files.length}…`;
+        const uploadedImage = await prepareUploadedImage(files[index]);
+        const photo = {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          createdAt: new Date().toISOString(),
+          image: uploadedImage.dataUrl,
+        };
+        const query = collection === "holidays" ? "?collection=holidays" : "";
+        const result = await requestApi(`gallery.php${query}`, {
+          method: "POST",
+          body: JSON.stringify(photo),
+        });
+        if (!Array.isArray(result.photos)) throw new Error("Сервер вернул некорректный список фотографий.");
+        if (collection === "holidays") sharedHolidayGalleryPhotos = result.photos;
+        else sharedGalleryPhotos = result.photos;
+        uploadedCount += 1;
+      }
+      if (collection === "holidays") sharedHolidayGalleryLoadError = null;
+      else sharedGalleryLoadError = null;
       renderGallery();
-      galleryForm.reset();
-      galleryFormMessage.classList.remove("form-message-error");
-      galleryFormMessage.textContent = "Фотография сохранена на сервере и теперь доступна всем посетителям.";
+      form.reset();
+      messageElement.classList.remove("form-message-error");
+      messageElement.textContent = `Загружено фотографий: ${files.length}. Они доступны посетителям сайта.`;
     } catch (error) {
-      galleryFormMessage.classList.add("form-message-error");
-      galleryFormMessage.textContent = error instanceof Error ? error.message : "Не удалось добавить фотографию. Проверьте файл и попробуйте снова.";
+      renderGallery();
+      messageElement.classList.add("form-message-error");
+      const reason = error instanceof Error ? error.message : "Не удалось добавить фотографии. Проверьте файлы и попробуйте снова.";
+      messageElement.textContent = uploadedCount
+        ? `Успешно загружено ${uploadedCount} из ${files.length}. Остальные не загружены: ${reason}`
+        : reason;
+    } finally {
+      if (submitButton) submitButton.disabled = false;
     }
   });
-}
+};
+
+bindGalleryUploadForm(galleryForm, galleryFormMessage, "gallery");
+bindGalleryUploadForm(holidayGalleryForm, holidayGalleryFormMessage, "holidays");
 
 if (exportBackupButton) {
   exportBackupButton.addEventListener("click", async () => {
@@ -2145,6 +2268,8 @@ if (exportBackupButton) {
       if (sharedContentLoadError) throw sharedContentLoadError;
       await sharedGalleryReady;
       if (sharedGalleryLoadError) throw sharedGalleryLoadError;
+      await sharedHolidayGalleryReady;
+      if (sharedHolidayGalleryLoadError) throw sharedHolidayGalleryLoadError;
       await downloadBackup();
     } finally {
       exportBackupButton.disabled = false;
@@ -2171,12 +2296,17 @@ if (importBackupInput) {
         const homeGroups = normalizeDirectoryBackupItems(backup.homeGroups, "домашних групп", homeGroupStorageKey);
         const presbyters = normalizeDirectoryBackupItems(backup.presbyters, "пресвитеров", presbyterStorageKey);
         const gallery = normalizeGalleryBackupItems(backup.gallery);
+        const holidayGallery = backup.holidayGallery === undefined
+          ? readGalleryPhotos("holidays")
+          : normalizeGalleryBackupItems(backup.holidayGallery);
         const pageVisibility = normalizePageVisibility(backup.pageVisibility || sharedContent.pageVisibility);
-        if (!window.confirm(`Заменить текущие данные на сервере?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФотографии галереи: ${gallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
+        if (!window.confirm(`Заменить текущие данные на сервере?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФото обычной галереи: ${gallery.length}\nФото галереи праздников: ${holidayGallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
         await sharedEventsReady;
         if (sharedEventsLoadError) throw sharedEventsLoadError;
         await sharedGalleryReady;
         if (sharedGalleryLoadError) throw sharedGalleryLoadError;
+        await sharedHolidayGalleryReady;
+        if (sharedHolidayGalleryLoadError) throw sharedHolidayGalleryLoadError;
         await sharedContentReady;
         if (sharedContentLoadError) throw sharedContentLoadError;
         if (!await downloadBackup(true)) throw new Error("Не удалось создать резервную копию перед импортом.");
@@ -2194,6 +2324,7 @@ if (importBackupInput) {
         });
         sharedContent.pageVisibility = normalizePageVisibility(visibilityResult.pageVisibility);
         await replaceSharedGalleryPhotos(gallery);
+        if (backup.holidayGallery !== undefined) await replaceSharedGalleryPhotos(holidayGallery, "holidays");
         for (const storageKey of contentCollectionByStorageKey.keys()) localStorage.removeItem(storageKey);
         localStorage.removeItem(galleryStorageKey);
         sharedEventsReady = loadSharedEvents();
@@ -2243,13 +2374,20 @@ if (leadersPageList || homeGroupsList || homeGroupsPreviewList || presbytersList
 }
 setupPeopleListAutoScroll([homeGroupsPreviewList, homeGroupsList, presbytersList]);
 if (galleryList) {
-  sharedGalleryReady = loadSharedGallery()
+  const collection = galleryCollection;
+  const galleryPromise = loadSharedGallery(false, collection)
     .then(() => renderGallery())
     .catch((error) => {
-      sharedGalleryLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общую галерею с сервера.");
+      if (collection === "holidays") {
+        sharedHolidayGalleryLoadError = error instanceof Error ? error : new Error("Не удалось загрузить галерею праздников.");
+      } else {
+        sharedGalleryLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общую галерею с сервера.");
+      }
       renderGallery();
-      console.error("Не удалось загрузить общую галерею с сервера.", sharedGalleryLoadError);
+      console.error(collection === "holidays" ? "Не удалось загрузить галерею праздников с сервера." : "Не удалось загрузить общую галерею с сервера.", error);
     });
+  if (collection === "holidays") sharedHolidayGalleryReady = galleryPromise;
+  else sharedGalleryReady = galleryPromise;
 } else if (!adminGalleryList) {
   renderGallery();
 }
