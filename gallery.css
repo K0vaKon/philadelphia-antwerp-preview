@@ -298,8 +298,8 @@
 
 @media (max-width: 800px) {
   .gallery-section.section {
-    padding-left: 3%;
-    padding-right: 3%;
+    padding-left: 2%;
+    padding-right: 2%;
   }
 
   .gallery-masonry {
@@ -319,6 +319,18 @@
     flex-basis: 76px;
     height: 58px;
     width: 76px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-section.section {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .gallery-masonry {
+    columns: 2;
+    column-gap: 8px;
   }
 }
 
