@@ -12,6 +12,7 @@ $recordCollections = [
     'leaders' => ['title', 'tag', 'description'],
     'homeGroups' => ['leader', 'location', 'day', 'description'],
     'presbyters' => ['title', 'tag', 'description', 'husbandFirstName', 'husbandLastName', 'wifeFirstName', 'wifeLastName'],
+    'quotes' => ['text', 'author'],
 ];
 $defaultPageVisibility = ['about' => true, 'leaders' => true, 'gallery' => true, 'holidayGallery' => false];
 $defaultHolidayGalleryTitles = ['ru' => 'Галерея праздников', 'nl' => 'Feestgalerij', 'en' => 'Holiday gallery'];
@@ -60,11 +61,18 @@ $readContent = static function () use ($dataPath, $recordCollections, $defaultPa
 
 $validateRecord = static function (array $record) use ($collection, $recordCollections): array {
     $allowedText = array_merge(
-        ['id', 'title', 'tag', 'description', 'leader', 'location', 'day', 'husbandFirstName', 'husbandLastName', 'wifeFirstName', 'wifeLastName'],
+        ['id', 'title', 'tag', 'description', 'leader', 'location', 'day', 'husbandFirstName', 'husbandLastName', 'wifeFirstName', 'wifeLastName', 'text', 'author'],
         ['image', 'spouseImage']
     );
     $normalized = [];
     foreach ($record as $key => $value) {
+        if ($key === 'dimImage') {
+            if ($collection !== 'quotes' || !is_bool($value)) {
+                apiRespond(422, ['error' => 'Некорректная настройка затемнения фотографии цитаты.']);
+            }
+            $normalized[$key] = $value;
+            continue;
+        }
         if ($key === 'translations') {
             if (!is_array($value)) apiRespond(422, ['error' => 'Некорректные переводы записи.']);
             $translations = [];
@@ -103,6 +111,12 @@ $validateRecord = static function (array $record) use ($collection, $recordColle
     }
     if ($collection === 'leaders' && trim($normalized['title'] ?? '') === '') {
         apiRespond(422, ['error' => 'Укажите название служения.']);
+    }
+    if ($collection === 'quotes') {
+        if (trim($normalized['text'] ?? '') === '') {
+            apiRespond(422, ['error' => 'Укажите текст цитаты.']);
+        }
+        $normalized['dimImage'] ??= true;
     }
     if ($collection === 'homeGroups'
         && (trim($normalized['leader'] ?? '') === '' || trim($normalized['location'] ?? '') === ''
@@ -236,6 +250,11 @@ if ($action === 'order' && $method === 'PUT') {
             fclose($lock);
             apiRespond(409, ['error' => 'Запись с таким идентификатором уже существует.']);
         }
+    }
+    if (count($records) >= 500) {
+        flock($lock, LOCK_UN);
+        fclose($lock);
+        apiRespond(422, ['error' => 'В разделе может быть не более 500 записей.']);
     }
     array_unshift($records, $record);
 } elseif ($id !== '') {

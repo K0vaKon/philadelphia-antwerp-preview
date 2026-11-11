@@ -199,6 +199,18 @@ const translations = {
 const additionalTranslations = {
   ru: {},
   nl: {
+    "Вдохновение": "Inspiratie",
+    "Цитаты": "Citaten",
+    "цитаты.": "citaten.",
+    "Новая цитата": "Nieuw citaat",
+    "Добавьте цитату и, при желании, фотографию.": "Voeg een citaat toe en eventueel een foto.",
+    "Текст цитаты": "Tekst van het citaat",
+    "Автор или источник (необязательно)": "Auteur of bron (optioneel)",
+    "Фото цитаты (необязательно)": "Foto bij het citaat (optioneel)",
+    "Текст цитаты переводится автоматически, если перевод не указан. Автор или источник не переводится автоматически.": "De tekst van het citaat wordt automatisch vertaald als er geen vertaling is opgegeven. De auteur of bron wordt niet automatisch vertaald.",
+    "Фотография кадрируется под формат карточки. Лучше всего подходят горизонтальные фотографии 16:9.": "De foto wordt bijgesneden voor de kaart. Liggende foto's van 16:9 zijn het meest geschikt.",
+    "Опубликовать цитату": "Citaat publiceren",
+    "Резервная копия содержит общие события, цитаты, служения, домашние группы, пресвитерские семьи и фотографии с сервера. При восстановлении выбранные данные заменяются на сервере.": "De back-up bevat gedeelde evenementen, citaten, bedieningen, huiskringen, ouderlingengezinnen en foto's van de server. Bij het herstellen worden de gekozen gegevens op de server vervangen.",
     "Первый запуск": "Eerste keer instellen",
     "Создайте пароль": "Maak een wachtwoord aan",
     "администратора.": "voor de beheerder.",
@@ -285,10 +297,27 @@ const additionalTranslations = {
     "Для служения детям": "Voor het kinderwerk",
     "Kinderfond (Обет веры)": "Kinderfonds (geloofsbelofte)",
     "церковь в Антверпене": "kerk in Antwerpen",
+    "Статистика": "Statistieken",
+    "Посещаемость": "Bezoekersstatistieken",
+    "сайта.": "van de website.",
+    "Просмотры публичных страниц за сегодня, 7 и 30 дней. Повторные загрузки считаются отдельно, поэтому это не число уникальных посетителей. Данные хранятся на сервере в агрегированном виде; IP-адреса и личные данные не собираются.": "Paginaweergaven van vandaag en de afgelopen 7 en 30 dagen. Herhaalde bezoeken worden apart geteld; dit is dus niet het aantal unieke bezoekers. Gegevens worden alleen geaggregeerd op de server opgeslagen; IP-adressen en persoonsgegevens worden niet verzameld.",
+    "Загрузка статистики…": "Statistieken laden…",
     "© 2026 Церковь Филадельфия": "© 2026 Kerk Philadelphia",
     "Антверпен, Бельгия": "Antwerpen, België",
   },
   en: {
+    "Вдохновение": "Inspiration",
+    "Цитаты": "Quotes",
+    "цитаты.": "quotes.",
+    "Новая цитата": "New quote",
+    "Добавьте цитату и, при желании, фотографию.": "Add a quote and, optionally, a photo.",
+    "Текст цитаты": "Quote text",
+    "Автор или источник (необязательно)": "Author or source (optional)",
+    "Фото цитаты (необязательно)": "Quote photo (optional)",
+    "Текст цитаты переводится автоматически, если перевод не указан. Автор или источник не переводится автоматически.": "The quote text is translated automatically if no translation is provided. The author or source is not translated automatically.",
+    "Фотография кадрируется под формат карточки. Лучше всего подходят горизонтальные фотографии 16:9.": "The photo is cropped to fit the card. Landscape 16:9 photos work best.",
+    "Опубликовать цитату": "Publish quote",
+    "Резервная копия содержит общие события, цитаты, служения, домашние группы, пресвитерские семьи и фотографии с сервера. При восстановлении выбранные данные заменяются на сервере.": "The backup contains shared events, quotes, ministries, home groups, presbyter families and photos from the server. Restoring replaces the selected data on the server.",
     "Первый запуск": "First-time setup",
     "Создайте пароль": "Create an administrator",
     "администратора.": "password.",
@@ -375,6 +404,11 @@ const additionalTranslations = {
     "Для служения детям": "For children's ministry",
     "Kinderfond (Обет веры)": "Children's fund (Faith Promise)",
     "церковь в Антверпене": "church in Antwerp",
+    "Статистика": "Statistics",
+    "Посещаемость": "Website traffic",
+    "сайта.": "overview.",
+    "Просмотры публичных страниц за сегодня, 7 и 30 дней. Повторные загрузки считаются отдельно, поэтому это не число уникальных посетителей. Данные хранятся на сервере в агрегированном виде; IP-адреса и личные данные не собираются.": "Public page views for today and the last 7 and 30 days. Repeat page loads are counted separately, so this is not a count of unique visitors. Data is stored on the server only in aggregate; IP addresses and personal data are not collected.",
+    "Загрузка статистики…": "Loading statistics…",
     "© 2026 Церковь Филадельфия": "© 2026 Philadelphia Church",
     "Антверпен, Бельгия": "Antwerp, Belgium",
   },
@@ -400,6 +434,7 @@ const translateTextNodes = (language) => {
   const nodes = [];
   while (walker.nextNode()) nodes.push(walker.currentNode);
   nodes.forEach((node) => {
+    if (node.parentElement?.closest("[data-no-auto-translate]")) return;
     const value = node.nodeValue.trim();
     if (dictionary[value]) node.nodeValue = node.nodeValue.replace(value, dictionary[value]);
   });
@@ -412,6 +447,7 @@ const translateTextNodes = (language) => {
     "Открыть меню": { nl: "Menu openen", en: "Open menu" },
     "Домашние группы": { nl: "Huiskringen", en: "Home groups" },
     "Пресвитеры": { nl: "Ouderlingen", en: "Presbyters" },
+    "Цитаты": { nl: "Citaten", en: "Quotes" },
     "Фотография из жизни церкви": { nl: "Foto uit het kerkelijk leven", en: "Photo from church life" },
     "Праздник жатвы": { nl: "Oogstfeest", en: "Harvest celebration" },
     "Рождественский праздник": { nl: "Kerstviering", en: "Christmas celebration" },
@@ -440,7 +476,8 @@ const translateTextNodes = (language) => {
       "Например, Иван Иванов": { nl: "Bijvoorbeeld: Jan Janssen", en: "For example: John Smith" },
       "Расскажите о группе": { nl: "Vertel over de groep", en: "Describe the group" },
       "Кратко расскажите о служении": { nl: "Vertel kort over de bediening", en: "Briefly describe the ministry" },
-      "Введите пароль": { nl: "Voer wachtwoord in", en: "Enter password" }
+      "Введите пароль": { nl: "Voer wachtwoord in", en: "Enter password" },
+      "Например, Галерея праздников": { nl: "Bijvoorbeeld: Feestgalerij", en: "For example: Holiday gallery" }
     };
     if (placeholderTranslations[placeholder]?.[language]) input.placeholder = placeholderTranslations[placeholder][language];
   });
@@ -486,3 +523,218 @@ document.querySelectorAll(".language-switcher").forEach((select) => {
 });
 
 translateTextNodes(savedLanguage);
+
+const automaticTranslationCacheKey = "philadelphia-auto-translations-v1";
+const automaticTranslationCache = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(automaticTranslationCacheKey) || "{}");
+    return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+  } catch (error) {
+    console.warn("Не удалось прочитать кэш автоматических переводов.", error);
+    return {};
+  }
+})();
+const automaticTranslationPending = new Map();
+const automaticTranslationQueue = [];
+const automaticTranslationFailures = new Set();
+let activeAutomaticTranslations = 0;
+const automaticTranslationConcurrency = 3;
+const automaticTranslationLanguages = ["nl", "en"];
+const automaticTranslationDictionary = {
+  ...translations[savedLanguage],
+  ...additionalTranslations[savedLanguage],
+};
+
+const persistAutomaticTranslationCache = () => {
+  try {
+    const entries = Object.entries(automaticTranslationCache).slice(-1500);
+    localStorage.setItem(automaticTranslationCacheKey, JSON.stringify(Object.fromEntries(entries)));
+  } catch (error) {
+    console.warn("Не удалось сохранить кэш автоматических переводов.", error);
+  }
+};
+
+const requestAutomaticTranslation = (text, language) => {
+  const key = `${language}|${text}`;
+  if (automaticTranslationCache[key]) return Promise.resolve(automaticTranslationCache[key]);
+  if (automaticTranslationPending.has(key)) return automaticTranslationPending.get(key);
+
+  const request = new Promise((resolve, reject) => {
+    automaticTranslationQueue.push({ text, language, key, resolve, reject });
+    const runNext = () => {
+      while (activeAutomaticTranslations < automaticTranslationConcurrency && automaticTranslationQueue.length) {
+        const job = automaticTranslationQueue.shift();
+        activeAutomaticTranslations += 1;
+        fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(job.text)}&langpair=ru|${job.language}`)
+          .then(async (response) => {
+            if (!response.ok) throw new Error(`Сервис перевода вернул HTTP ${response.status}.`);
+            const payload = await response.json();
+            const translated = String(payload?.responseData?.translatedText || "").trim();
+            if (payload?.responseStatus !== 200 || !translated || /MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(translated)) {
+              throw new Error("Сервис перевода не вернул корректный перевод.");
+            }
+            automaticTranslationCache[job.key] = translated;
+            persistAutomaticTranslationCache();
+            job.resolve(translated);
+          })
+          .catch(job.reject)
+          .finally(() => {
+            activeAutomaticTranslations -= 1;
+            runNext();
+          });
+      }
+    };
+    runNext();
+  });
+  automaticTranslationPending.set(key, request);
+  request.finally(() => automaticTranslationPending.delete(key)).catch(() => {});
+  return request;
+};
+
+const containsRussianText = (text) => /[А-Яа-яЁё]/.test(text);
+
+const splitAutomaticTranslationText = (text) => {
+  const chunks = [];
+  let current = "";
+  for (const part of text.match(/[^.!?\n]+[.!?\n]*\s*/g) || [text]) {
+    if (current && (current + part).length > 450) {
+      chunks.push(current.trim());
+      current = "";
+    }
+    current += part;
+  }
+  if (current) chunks.push(current.trim());
+  return chunks.flatMap((chunk) => chunk.length > 450 ? chunk.match(/[\s\S]{1,450}/g) : [chunk]).filter(Boolean);
+};
+
+const translateAutomatically = async (text, language) => {
+  const chunks = splitAutomaticTranslationText(text);
+  const translated = [];
+  for (const chunk of chunks) translated.push(await requestAutomaticTranslation(chunk, language));
+  return translated.join(" ");
+};
+
+const isUserContentNode = (node) => {
+  const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+  if (element?.closest("[data-auto-translate]")) return false;
+  if (node.nodeType === Node.TEXT_NODE && element?.closest("textarea")) return true;
+  return Boolean(element?.closest([
+    "script", "style", "noscript", "code", "pre", "[contenteditable='true']",
+    "[data-no-auto-translate]", ".video-card", ".leader-card h3", ".leader-preview-card h3",
+    ".leader-card img", ".leader-preview-card img", ".home-group-card h3", ".presbyter-person-name",
+    ".admin-event > div",
+  ].join(",")));
+};
+
+const translateUnknownTextNode = (node, language) => {
+  if (!node || node.nodeType !== Node.TEXT_NODE || isUserContentNode(node)) return;
+  const original = node.nodeValue || "";
+  const text = original.trim();
+  if (text.length < 2 || !containsRussianText(text)) return;
+
+  const dictionary = language === savedLanguage ? automaticTranslationDictionary : {
+    ...translations[language],
+    ...additionalTranslations[language],
+  };
+  if (dictionary[text]) {
+    node.nodeValue = original.replace(text, dictionary[text]);
+    return;
+  }
+
+  const leading = original.match(/^\s*/)?.[0] || "";
+  const trailing = original.match(/\s*$/)?.[0] || "";
+  translateAutomatically(text, language)
+    .then((translated) => {
+      if (node.isConnected && node.nodeValue === original) node.nodeValue = `${leading}${translated}${trailing}`;
+    })
+    .catch((error) => {
+      const key = `${language}|${text}`;
+      if (!automaticTranslationFailures.has(key)) {
+        automaticTranslationFailures.add(key);
+        console.error(`Не удалось автоматически перевести текст: «${text.slice(0, 100)}».`, error);
+      }
+    });
+};
+
+const translateUnknownContent = (root, language) => {
+  if (language === "ru" || !root) return;
+  if (root.nodeType === Node.TEXT_NODE) {
+    translateUnknownTextNode(root, language);
+    return;
+  }
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) translateUnknownTextNode(walker.currentNode, language);
+
+  const attributeElements = root.nodeType === Node.ELEMENT_NODE
+    ? [root, ...root.querySelectorAll("[placeholder], [aria-label], [alt], [title]")]
+    : [...root.querySelectorAll("[placeholder], [aria-label], [alt], [title]")];
+  for (const element of attributeElements) {
+    if (isUserContentNode(element)) continue;
+    for (const attribute of ["placeholder", "aria-label", "alt", "title"]) {
+      const value = element.getAttribute(attribute);
+      if (!value || !containsRussianText(value)) continue;
+      const dictionary = language === savedLanguage ? automaticTranslationDictionary : {
+        ...translations[language],
+        ...additionalTranslations[language],
+      };
+      const translated = dictionary[value];
+      if (translated) {
+        element.setAttribute(attribute, translated);
+        continue;
+      }
+      translateAutomatically(value, language)
+        .then((result) => {
+          if (element.isConnected && element.getAttribute(attribute) === value) element.setAttribute(attribute, result);
+        })
+        .catch((error) => {
+          const key = `${language}|${value}`;
+          if (!automaticTranslationFailures.has(key)) {
+            automaticTranslationFailures.add(key);
+            console.error(`Не удалось автоматически перевести атрибут «${value.slice(0, 100)}».`, error);
+          }
+        });
+    }
+  }
+};
+
+if (automaticTranslationLanguages.includes(savedLanguage)) {
+  const translateMetadata = (element, attribute, value) => {
+    if (!value || !containsRussianText(value)) return;
+    const translated = automaticTranslationDictionary[value];
+    if (translated) {
+      element[attribute] = translated;
+      return;
+    }
+    translateAutomatically(value, savedLanguage)
+      .then((result) => {
+        if (element[attribute] === value) element[attribute] = result;
+      })
+      .catch((error) => {
+        const key = `${savedLanguage}|${value}`;
+        if (!automaticTranslationFailures.has(key)) {
+          automaticTranslationFailures.add(key);
+          console.error(`Не удалось автоматически перевести метаданные страницы: «${value.slice(0, 100)}».`, error);
+        }
+      });
+  };
+  translateMetadata(document, "title", document.title);
+  const description = document.querySelector('meta[name="description"]');
+  if (description) translateMetadata(description, "content", description.getAttribute("content") || "");
+
+  translateUnknownContent(document.body, savedLanguage);
+  let translationObserverTimer = 0;
+  const translationObserver = new MutationObserver((mutations) => {
+    window.clearTimeout(translationObserverTimer);
+    translationObserverTimer = window.setTimeout(() => {
+      for (const mutation of mutations) {
+        if (mutation.type === "characterData") {
+          translateUnknownTextNode(mutation.target, savedLanguage);
+          continue;
+        }
+        mutation.addedNodes.forEach((node) => translateUnknownContent(node, savedLanguage));
+      }
+    }, 80);
+  });
+  translationObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+}

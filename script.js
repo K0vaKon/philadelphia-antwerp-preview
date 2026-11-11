@@ -41,6 +41,134 @@ const requestApi = async (endpoint, options = {}) => {
   return payload;
 };
 
+const siteAnalyticsMessages = {
+  ru: {
+    today: "Сегодня",
+    last7Days: "За 7 дней",
+    last30Days: "За 30 дней",
+    dailyTitle: "Посещения по дням",
+    pagesTitle: "Популярные страницы за 7 дней",
+    pages: {
+      "index.html": "Главная",
+      "about.html": "О нас",
+      "leaders.html": "Служения",
+      "gallery.html": "Галерея",
+      "holiday-gallery.html": "Галерея праздников",
+    },
+    loaded: "Статистика обновлена.",
+    loadError: "Не удалось загрузить статистику посещений.",
+  },
+  nl: {
+    today: "Vandaag",
+    last7Days: "Afgelopen 7 dagen",
+    last30Days: "Afgelopen 30 dagen",
+    dailyTitle: "Bezoeken per dag",
+    pagesTitle: "Populaire pagina's in de afgelopen 7 dagen",
+    pages: {
+      "index.html": "Home",
+      "about.html": "Over ons",
+      "leaders.html": "Bedieningen",
+      "gallery.html": "Galerij",
+      "holiday-gallery.html": "Feestgalerij",
+    },
+    loaded: "Statistieken bijgewerkt.",
+    loadError: "Bezoekstatistieken konden niet worden geladen.",
+  },
+  en: {
+    today: "Today",
+    last7Days: "Last 7 days",
+    last30Days: "Last 30 days",
+    dailyTitle: "Visits by day",
+    pagesTitle: "Popular pages in the last 7 days",
+    pages: {
+      "index.html": "Home",
+      "about.html": "About us",
+      "leaders.html": "Ministries",
+      "gallery.html": "Gallery",
+      "holiday-gallery.html": "Holiday gallery",
+    },
+    loaded: "Statistics updated.",
+    loadError: "Could not load visit statistics.",
+  },
+};
+
+const loadSiteAnalytics = async () => {
+  const message = document.querySelector("#site-analytics-message");
+  const summary = document.querySelector("#site-analytics-summary");
+  const history = document.querySelector("#site-analytics-history");
+  const pages = document.querySelector("#site-analytics-pages");
+  if (!message || !summary || !history || !pages) return;
+
+  const language = getCurrentLanguage();
+  const labels = siteAnalyticsMessages[language];
+  message.textContent = language === "nl" ? "Statistieken laden…" : language === "en" ? "Loading statistics…" : "Загрузка статистики…";
+  summary.replaceChildren();
+  history.replaceChildren();
+  pages.replaceChildren();
+  try {
+    const result = await requestApi("analytics.php");
+    if (!Array.isArray(result.days)) throw new Error("Сервер вернул неверный формат статистики.");
+
+    const days = result.days;
+    const numberFormat = new Intl.NumberFormat(language === "nl" ? "nl-BE" : language === "en" ? "en-GB" : "ru-RU");
+    const totals = [
+      [labels.today, days[0]?.views || 0],
+      [labels.last7Days, days.slice(0, 7).reduce((total, day) => total + day.views, 0)],
+      [labels.last30Days, days.reduce((total, day) => total + day.views, 0)],
+    ];
+    summary.replaceChildren(...totals.map(([label, value]) => {
+      const metric = document.createElement("div");
+      metric.className = "analytics-metric";
+      const caption = document.createElement("span");
+      caption.textContent = label;
+      const count = document.createElement("strong");
+      count.textContent = numberFormat.format(value);
+      metric.append(caption, count);
+      return metric;
+    }));
+
+    const pageCounts = Object.fromEntries(Object.keys(labels.pages).map((page) => [page, 0]));
+    days.slice(0, 7).forEach((day) => {
+      Object.entries(day.pages || {}).forEach(([page, count]) => {
+        if (Object.hasOwn(pageCounts, page) && Number.isInteger(count) && count >= 0) pageCounts[page] += count;
+      });
+    });
+    const pageHeading = document.createElement("h3");
+    pageHeading.textContent = labels.pagesTitle;
+    const pageRows = Object.entries(pageCounts).map(([page, count]) => {
+      const row = document.createElement("div");
+      row.className = "analytics-page-row";
+      const name = document.createElement("span");
+      name.textContent = labels.pages[page];
+      const views = document.createElement("strong");
+      views.textContent = numberFormat.format(count);
+      row.append(name, views);
+      return row;
+    });
+    pages.replaceChildren(pageHeading, ...pageRows);
+
+    const historyHeading = document.createElement("h3");
+    historyHeading.textContent = labels.dailyTitle;
+    const dateFormat = new Intl.DateTimeFormat(language === "nl" ? "nl-BE" : language === "en" ? "en-GB" : "ru-RU", { day: "numeric", month: "short" });
+    const dailyRows = days.slice(0, 14).map((day) => {
+      const row = document.createElement("div");
+      row.className = "analytics-page-row";
+      const date = document.createElement("span");
+      date.textContent = dateFormat.format(new Date(`${day.date}T12:00:00`));
+      const views = document.createElement("strong");
+      views.textContent = numberFormat.format(day.views);
+      row.append(date, views);
+      return row;
+    });
+    history.replaceChildren(historyHeading, ...dailyRows);
+    message.textContent = labels.loaded;
+  } catch (error) {
+    message.textContent = `${labels.loadError} ${error instanceof Error ? error.message : ""}`.trim();
+    message.classList.add("form-message-error");
+    console.error("Не удалось загрузить статистику посещаемости.", error);
+  }
+};
+
 if (adminTabs) {
   const tabs = [...adminTabs.querySelectorAll("[data-admin-tab]")];
   const panels = [...document.querySelectorAll("[data-admin-panel]")];
@@ -90,18 +218,21 @@ const showAdmin = () => {
   if (loginScreen) loginScreen.hidden = true;
   if (setupScreen) setupScreen.hidden = true;
   if (logoutButton) logoutButton.hidden = false;
+  loadSiteAnalytics();
   sharedContentReady = loadSharedContent(true)
     .then(() => {
       sharedContentLoadError = null;
       renderLeaders();
       renderHomeGroups();
       renderPresbyters();
+      renderQuotes();
     })
     .catch((error) => {
       sharedContentLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общее содержимое сайта.");
       renderLeaders();
       renderHomeGroups();
       renderPresbyters();
+      renderQuotes();
       console.error("Не удалось загрузить общее содержимое сайта.", sharedContentLoadError);
     });
   sharedGalleryReady = loadSharedGallery(true, "gallery")
@@ -563,6 +694,10 @@ const presbytersList = document.querySelector("#presbyters-list");
 const adminPresbytersList = document.querySelector("#admin-presbyters-list");
 const presbyterForm = document.querySelector("#presbyter-form");
 const presbyterStorageKey = "philadelphia-presbyters";
+const quotesList = document.querySelector("#quotes-list");
+const adminQuotesList = document.querySelector("#admin-quotes-list");
+const quoteForm = document.querySelector("#quote-form");
+const quoteStorageKey = "philadelphia-quotes";
 const galleryList = document.querySelector("#gallery-list");
 const galleryForm = document.querySelector("#gallery-form");
 const adminGalleryList = document.querySelector("#admin-gallery-list");
@@ -580,11 +715,14 @@ const contentCollectionByStorageKey = new Map([
   [leaderStorageKey, "leaders"],
   [homeGroupStorageKey, "homeGroups"],
   [presbyterStorageKey, "presbyters"],
+  [quoteStorageKey, "quotes"],
 ]);
+const legacyContentStorageKeys = [leaderStorageKey, homeGroupStorageKey, presbyterStorageKey];
 let sharedContent = {
   leaders: [],
   homeGroups: [],
   presbyters: [],
+  quotes: [],
   pageVisibility: {
     about: true,
     leaders: true,
@@ -753,11 +891,12 @@ const normalizeBackupItems = (items, type) => {
   return items.map((item) => {
     if (!item || typeof item !== "object" || typeof item.id !== "string") throw new Error(`Некорректная запись ${type}.`);
     const normalized = { ...item };
-    ["id", "title", "tag", "description", "date", "time", "image", "spouseImage", "husbandFirstName", "husbandLastName", "wifeFirstName", "wifeLastName", "leader", "location", "day"].forEach((key) => {
+    ["id", "title", "tag", "description", "date", "time", "image", "spouseImage", "husbandFirstName", "husbandLastName", "wifeFirstName", "wifeLastName", "leader", "location", "day", "text", "author"].forEach((key) => {
       if (normalized[key] !== undefined && typeof normalized[key] !== "string") throw new Error(`Некорректное поле ${key}.`);
       const limit = ["image", "spouseImage"].includes(key) ? 5 * 1024 * 1024 : 12000;
       if (typeof normalized[key] === "string" && normalized[key].length > limit) throw new Error("Слишком большое текстовое поле.");
     });
+    if (normalized.dimImage !== undefined && typeof normalized.dimImage !== "boolean") throw new Error("Некорректная настройка затемнения.");
     if (!isSafeImage(normalized.image || "") || !isSafeImage(normalized.spouseImage || "")) {
       throw new Error("Разрешены только изображения и безопасные HTTPS-ссылки.");
     }
@@ -820,6 +959,7 @@ const createBackup = async () => JSON.stringify({
   leaders: readLeaders(),
   homeGroups: readRecords(homeGroupStorageKey),
   presbyters: readRecords(presbyterStorageKey),
+  quotes: readRecords(quoteStorageKey),
   pageVisibility: sharedContent.pageVisibility,
   gallery: await Promise.all(readGalleryPhotos("gallery").map(async (photo) => ({
     ...photo,
@@ -872,9 +1012,14 @@ const updatePageVisibilityControls = () => {
 
 const loadSharedContent = async (migrateLegacyRecords = false) => {
   const allCollections = [...contentCollectionByStorageKey.values()];
-  const collectionsToLoad = migrateLegacyRecords || leadersPageList || adminLeadersList
+  const collectionsToLoad = migrateLegacyRecords || adminLeadersList
     ? allCollections
-    : homeGroupsPreviewList ? ["homeGroups"] : [];
+    : [
+      ...(leadersPageList ? ["leaders"] : []),
+      ...(homeGroupsList || homeGroupsPreviewList ? ["homeGroups"] : []),
+      ...(presbytersList ? ["presbyters"] : []),
+      ...(quotesList ? ["quotes"] : []),
+    ];
   for (const collection of collectionsToLoad) {
     const result = await requestApi(`content.php?collection=${collection}`);
     if (!Array.isArray(result.items)) throw new Error("Сервер вернул некорректное содержимое сайта.");
@@ -905,7 +1050,8 @@ const loadSharedContent = async (migrateLegacyRecords = false) => {
       }
     }
 
-    for (const [storageKey, collection] of contentCollectionByStorageKey) {
+    for (const storageKey of legacyContentStorageKeys) {
+      const collection = contentCollectionByStorageKey.get(storageKey);
       const legacyRecords = readLegacyRecords(storageKey);
       const existingIds = new Set(sharedContent[collection].map((record) => record.id));
       for (const record of legacyRecords) {
@@ -922,7 +1068,7 @@ const loadSharedContent = async (migrateLegacyRecords = false) => {
         existingIds.add(record.id);
       }
     }
-    for (const storageKey of contentCollectionByStorageKey.keys()) localStorage.removeItem(storageKey);
+    for (const storageKey of legacyContentStorageKeys) localStorage.removeItem(storageKey);
     localStorage.removeItem("philadelphia-page-visibility-draft");
   }
   return sharedContent;
@@ -1169,6 +1315,10 @@ const getDynamicLabel = (key) => {
     sunday: { ru: "Воскресенье", nl: "Zondag", en: "Sunday" },
     presbyter: { ru: "Пресвитер", nl: "Ouderling", en: "Presbyter" },
     event: { ru: "Событие", nl: "Evenement", en: "Event" },
+    quote: { ru: "Цитата", nl: "Citaat", en: "Quote" },
+    quoteText: { ru: "Текст цитаты", nl: "Tekst van het citaat", en: "Quote text" },
+    quoteAuthor: { ru: "Автор или источник (необязательно)", nl: "Auteur of bron (optioneel)", en: "Author or source (optional)" },
+    removeImage: { ru: "Удалить фотографию", nl: "Foto verwijderen", en: "Remove photo" },
     remove: { ru: "Удалить", nl: "Verwijderen", en: "Delete" },
     moveUp: { ru: "Переместить выше", nl: "Omhoog verplaatsen", en: "Move up" },
     moveDown: { ru: "Переместить ниже", nl: "Omlaag verplaatsen", en: "Move down" },
@@ -1199,10 +1349,12 @@ const getDynamicLabel = (key) => {
     noAdminRecords: { ru: "Пока нет записей.", nl: "Er zijn nog geen items.", en: "There are no entries yet." },
     noHomeGroups: { ru: "Домашние группы пока не добавлены.", nl: "Er zijn nog geen huiskringen toegevoegd.", en: "No home groups have been added yet." },
     noPresbyters: { ru: "Пресвитеры пока не добавлены.", nl: "Er zijn nog geen ouderlingen toegevoegd.", en: "No presbyters have been added yet." },
+    noQuotes: { ru: "Цитаты пока не добавлены.", nl: "Er zijn nog geen citaten toegevoegd.", en: "No quotes have been added yet." },
     createRecordError: { ru: "Не удалось добавить запись.", nl: "De invoer kon niet worden toegevoegd.", en: "Could not add the entry." },
     homeGroupAdded: { ru: "Домашняя группа добавлена.", nl: "Huiskring toegevoegd.", en: "Home group added." },
     presbyterAdded: { ru: "Пресвитерская семья добавлена.", nl: "Ouderlingenechtpaar toegevoegd.", en: "Presbyter family added." },
-    noEvents: { ru: "Сейчас нет событий ближайшие 3 месяца.", nl: "Er zijn de komende 3 maanden geen evenementen.", en: "There are no events in the next 3 months." },
+    quoteAdded: { ru: "Цитата опубликована для всех посетителей.", nl: "Het citaat is gepubliceerd voor alle bezoekers.", en: "The quote has been published for all visitors." },
+    noEvents: { ru: "В ближайшее время событий нет.", nl: "Er zijn binnenkort geen evenementen.", en: "There are no events in the near future." },
   };
   return labels[key]?.[language] || "";
 };
@@ -1501,6 +1653,7 @@ const formatAdminRecordCount = (count, type) => {
     homeGroup: { ru: ["домашняя группа", "домашние группы", "домашних групп"], nl: "huiskringen", en: ["home group", "home groups"] },
     presbyter: { ru: ["пресвитерская семья", "пресвитерские семьи", "пресвитерских семей"], nl: "ouderlingenechtparen", en: ["presbyter family", "presbyter families"] },
     leader: { ru: ["лидер", "лидера", "лидеров"], nl: "leiders", en: ["leader", "leaders"] },
+    quote: { ru: ["цитата", "цитаты", "цитат"], nl: "citaten", en: ["quote", "quotes"] },
   };
   const names = labels[type];
   if (language === "ru") {
@@ -1548,17 +1701,18 @@ const translateText = async (text, language) => {
   return results.join(" ").trim();
 };
 
-// Fields left empty in the Dutch/English forms are translated automatically from the Russian source.
-const createRecordTranslations = async (formData, translatableFields = ["title", "tag", "description"]) => {
+// Empty translation fields are translated from Russian unless they are marked as manual-only.
+const createRecordTranslations = async (formData, translatableFields = ["title", "tag", "description"], manualOnlyFields = []) => {
   const entries = await Promise.all(contentLanguages.map(async (language) => {
     const values = await Promise.all(translatableFields.map(async (field) => {
       const manual = String(formData.get(`translations.${language}.${field}`) || "").trim();
       if (manual) return [field, manual];
       const source = String(formData.get(field) || "").trim();
-      if (!source) return [field, ""];
+      if (!source || manualOnlyFields.includes(field)) return [field, ""];
       try {
         return [field, await translateText(source, language)];
-      } catch {
+      } catch (error) {
+        console.error(`Не удалось автоматически перевести поле «${field}» на ${language}; запись будет сохранена без этого перевода.`, error);
         return [field, ""];
       }
     }));
@@ -1582,6 +1736,7 @@ const getPresbyterFamilyTitle = (record) => {
 const recordEditorMarkup = (record, type) => {
   const isHomeGroup = type === "homeGroup";
   const isPresbyter = type === "presbyter";
+  const isQuote = type === "quote";
   const legacyName = isPresbyter ? splitLegacyPresbyterName(record) : { firstName: "", lastName: "" };
   const fieldLabels = {
     title: getDynamicLabel("title"),
@@ -1590,8 +1745,16 @@ const recordEditorMarkup = (record, type) => {
     leader: getDynamicLabel("leader"),
     location: getDynamicLabel("location"),
     day: getDynamicLabel("dayOfWeek"),
+    text: getDynamicLabel("quoteText"),
+    author: getDynamicLabel("quoteAuthor"),
   };
-  const sourceFields = isHomeGroup
+  const sourceFields = isQuote
+    ? `<fieldset><legend>${getDynamicLabel("source")}</legend>
+      <label>${fieldLabels.text}<textarea name="text" rows="4" maxlength="3000" required>${escapeHtml(record.text || "")}</textarea></label>
+      <label>${fieldLabels.author}<input name="author" maxlength="300" value="${escapeHtml(record.author || "")}" /></label>
+      <label class="event-dimming-option"><input name="dimImage" type="checkbox"${record.dimImage !== false ? " checked" : ""} /> ${getDynamicLabel("dimEventImage")}</label>
+    </fieldset>`
+    : isHomeGroup
     ? `<fieldset><legend>${getDynamicLabel("source")}</legend>
       <label>${fieldLabels.leader}<input name="leader" value="${escapeHtml(record.leader || record.title || "")}" required /></label>
       <label>${fieldLabels.location}<input name="location" value="${escapeHtml(record.location || record.tag || "")}" required /></label>
@@ -1615,20 +1778,23 @@ const recordEditorMarkup = (record, type) => {
     <label>${fieldLabels.tag}<input name="tag" value="${escapeHtml(record.tag || "")}" /></label>
     <label>${fieldLabels.description}<textarea name="description" rows="3">${escapeHtml(record.description || "")}</textarea></label>
   </fieldset>`;
-  const translationKeys = isHomeGroup ? ["leader", "location", "description"] : isPresbyter ? [] : ["title", "tag", "description"];
+  const translationKeys = isQuote ? ["text", "author"] : isHomeGroup ? ["leader", "location", "description"] : isPresbyter ? [] : ["title", "tag", "description"];
   const translationLabels = isHomeGroup ? fieldLabels : { ...fieldLabels, description: getDynamicLabel("description") };
   const translationFields = isPresbyter ? "" : contentLanguages.map((language) => {
     const values = record.translations?.[language] || {};
     return `<fieldset><legend>${language === "nl" ? "Nederlands" : "English"}</legend>${translationKeys.map((field) => {
       const legacyField = field === "leader" ? "title" : field === "location" ? "tag" : field;
       const value = escapeHtml(values[field] || (isHomeGroup ? values[legacyField] : "") || "");
-      const input = field === "description"
-        ? `<textarea name="translations.${language}.${field}">${value}</textarea>`
-        : `<input name="translations.${language}.${field}" value="${value}" />`;
+      const input = field === "description" || field === "text"
+        ? `<textarea name="translations.${language}.${field}"${isQuote ? ' maxlength="3000"' : ""}>${value}</textarea>`
+        : `<input name="translations.${language}.${field}" value="${value}"${isQuote ? ' maxlength="300"' : ""} />`;
       return `<label>${translationLabels[field]}${input}</label>`;
     }).join("")}</fieldset>`;
   }).join("");
-  return `<details class="admin-record-editor"><summary>${getDynamicLabel("editRecord")}</summary><form data-record-editor="${type}" data-record-id="${escapeHtml(record.id)}">${sourceFields}${translationFields}${isPresbyter ? "" : `<label>${getDynamicLabel("image")}<input name="image" type="file" accept="image/*" /></label><img class="admin-edit-image" src="${escapeHtml(record.image || "")}" alt="${getDynamicLabel("image")}" loading="lazy" />`}<button class="button button-dark" type="submit">${getDynamicLabel("saveRecord")}</button><p class="record-save-message" role="status"></p></form></details>`;
+  const imageFields = isPresbyter ? "" : isQuote
+    ? `<label>${getDynamicLabel("image")}<input name="image" type="file" accept="image/*" /></label>${record.image ? `<img class="admin-edit-image" src="${escapeHtml(record.image)}" alt="${getDynamicLabel("image")}" loading="lazy" /><label class="event-dimming-option"><input name="removeImage" type="checkbox" /> ${getDynamicLabel("removeImage")}</label>` : ""}`
+    : `<label>${getDynamicLabel("image")}<input name="image" type="file" accept="image/*" /></label><img class="admin-edit-image" src="${escapeHtml(record.image || "")}" alt="${getDynamicLabel("image")}" loading="lazy" />`;
+  return `<details class="admin-record-editor"><summary>${getDynamicLabel("editRecord")}</summary><form data-record-editor="${type}" data-record-id="${escapeHtml(record.id)}">${sourceFields}${translationFields}${imageFields}<button class="button button-dark" type="submit">${getDynamicLabel("saveRecord")}</button><p class="record-save-message" role="status"></p></form></details>`;
 };
 
 const bindRecordEditors = (container, storageKey, type, render) => {
@@ -1636,6 +1802,12 @@ const bindRecordEditors = (container, storageKey, type, render) => {
     form.addEventListener("submit", async (submitEvent) => {
       submitEvent.preventDefault();
       const message = form.querySelector(".record-save-message");
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (message) {
+        message.textContent = "";
+        message.classList.remove("form-message-error");
+      }
+      if (submitButton) submitButton.disabled = true;
       try {
         const records = type === "event" ? readEvents() : readRecords(storageKey);
         const record = records.find((item) => item.id === form.dataset.recordId);
@@ -1648,13 +1820,19 @@ const bindRecordEditors = (container, storageKey, type, render) => {
         ]);
         const image = uploadedImage.dataUrl;
         const spouseImage = typeof uploadedSpouseImage === "string" ? "" : uploadedSpouseImage.dataUrl;
+        const removeImage = type === "quote" && formData.get("removeImage") === "on";
+        if (removeImage && image) throw new Error("Выберите новое фото или удаление прежнего, но не оба действия сразу.");
         const updatedRecord = {
           ...record,
           ...(type === "presbyter" ? {} : {
-            description: String(formData.get("description") || "").trim(),
-            translations: await createRecordTranslations(formData, type === "homeGroup" ? ["leader", "location", "description"] : undefined),
+            ...(type === "quote" ? {} : { description: String(formData.get("description") || "").trim() }),
+            translations: await createRecordTranslations(
+              formData,
+              type === "homeGroup" ? ["leader", "location", "description"] : type === "quote" ? ["text", "author"] : undefined,
+              type === "quote" ? ["author"] : [],
+            ),
           }),
-          image: image || record.image,
+          image: removeImage ? "" : image || record.image,
           ...(type === "presbyter" ? { spouseImage: spouseImage || record.spouseImage || "" } : {}),
         };
         if (type === "homeGroup") {
@@ -1667,6 +1845,10 @@ const bindRecordEditors = (container, storageKey, type, render) => {
           updatedRecord.wifeFirstName = String(formData.get("wifeFirstName") || "").trim();
           updatedRecord.wifeLastName = String(formData.get("wifeLastName") || "").trim();
           updatedRecord.title = getPresbyterFamilyTitle(updatedRecord);
+        } else if (type === "quote") {
+          updatedRecord.text = String(formData.get("text") || "").trim();
+          updatedRecord.author = String(formData.get("author") || "").trim();
+          updatedRecord.dimImage = formData.get("dimImage") === "on";
         } else {
           updatedRecord.title = String(formData.get("title") || "").trim();
           updatedRecord.tag = String(formData.get("tag") || "").trim();
@@ -1679,7 +1861,8 @@ const bindRecordEditors = (container, storageKey, type, render) => {
         }
         if ((type === "homeGroup" && (!updatedRecord.leader || !updatedRecord.location || !updatedRecord.day || !updatedRecord.description))
           || (type === "presbyter" && (!updatedRecord.husbandFirstName || !updatedRecord.husbandLastName || !updatedRecord.wifeFirstName || !updatedRecord.wifeLastName))
-          || (type !== "homeGroup" && type !== "presbyter" && type !== "event" && !updatedRecord.title)) {
+          || (type === "quote" && !updatedRecord.text)
+          || (type !== "homeGroup" && type !== "presbyter" && type !== "event" && type !== "quote" && !updatedRecord.title)) {
           throw new Error("Заполните все обязательные поля.");
         }
 
@@ -1706,7 +1889,12 @@ const bindRecordEditors = (container, storageKey, type, render) => {
         if (updatedForm) updatedForm.closest("details").open = true;
         if (updatedMessage) updatedMessage.textContent = getDynamicLabel("saved");
       } catch (error) {
-        if (message) message.textContent = error instanceof Error ? error.message : "Не удалось сохранить изменения.";
+        if (message) {
+          message.classList.add("form-message-error");
+          message.textContent = error instanceof Error ? error.message : "Не удалось сохранить изменения.";
+        }
+      } finally {
+        if (submitButton) submitButton.disabled = false;
       }
     });
   });
@@ -1791,17 +1979,21 @@ const renderAdminDirectory = (records, container, storageKey, type, render) => {
     ? `<p class="admin-record-empty form-message-error">${escapeHtml(sharedContentLoadError.message)}</p>`
     : records.length
     ? records.map((record, index) => {
-      const title = type === "homeGroup"
+      const title = type === "quote"
+        ? getLocalizedRecordField(record, "text")
+        : type === "homeGroup"
         ? getLocalizedHomeGroupField(record, "leader")
         : type === "presbyter" ? getPresbyterFamilyTitle(record) : getLocalizedRecordField(record, "title");
-      const details = type === "homeGroup"
+      const details = type === "quote"
+        ? getLocalizedRecordField(record, "author")
+        : type === "homeGroup"
         ? [getLocalizedHomeGroupField(record, "location"), record.day ? getDynamicLabel(record.day) : ""].filter(Boolean).join(" · ")
         : type === "presbyter" ? getDynamicLabel("presbyter") : getLocalizedRecordField(record, "tag") || getDynamicLabel(type);
       const orderControls = type === "homeGroup"
         ? `<div class="admin-record-order"><button type="button" data-move-home-group="up" data-record-id="${escapeHtml(record.id)}" aria-label="${getDynamicLabel("moveUp")}" title="${getDynamicLabel("moveUp")}"${index === 0 ? " disabled" : ""}>↑</button><button type="button" data-move-home-group="down" data-record-id="${escapeHtml(record.id)}" aria-label="${getDynamicLabel("moveDown")}" title="${getDynamicLabel("moveDown")}"${index === records.length - 1 ? " disabled" : ""}>↓</button></div>`
         : "";
       const orderMessage = type === "homeGroup" ? '<p class="record-order-message" role="status" hidden></p>' : "";
-      return `<article class="admin-event"><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(details)}</span></div>${orderControls}<button type="button" data-delete-record="${escapeHtml(record.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(record, type)}${orderMessage}</article>`;
+      return `<article class="admin-event"><div><strong${type === "quote" ? ' class="admin-quote-text"' : ""}>${escapeHtml(title)}</strong><span>${escapeHtml(details)}</span></div>${orderControls}<button type="button" data-delete-record="${escapeHtml(record.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(record, type)}${orderMessage}</article>`;
     }).join("")
     : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
   bindRecordEditors(container, storageKey, type, render);
@@ -1869,6 +2061,26 @@ const renderPresbyters = () => {
   const records = readRecords(presbyterStorageKey);
   renderDirectory(records, presbytersList, "noPresbyters", "presbyter");
   renderAdminDirectory(records, adminPresbytersList, presbyterStorageKey, "presbyter", renderPresbyters);
+};
+
+const renderQuotes = () => {
+  const records = readRecords(quoteStorageKey);
+  if (quotesList) {
+    quotesList.classList.toggle("is-empty", Boolean(sharedContentLoadError) || !records.length);
+    quotesList.innerHTML = sharedContentLoadError
+      ? `<p class="quotes-empty">${escapeHtml(sharedContentLoadError.message)}</p>`
+      : records.length
+      ? records.map((record) => {
+        const author = getLocalizedRecordField(record, "author");
+        const translatedText = getCurrentLanguage() !== "ru" && record.translations?.[getCurrentLanguage()]?.text;
+        return `<article class="quote-card${record.dimImage === false ? " quote-card-no-dimming" : ""}">
+          ${record.image ? `<img class="quote-card-image" src="${escapeHtml(record.image)}" alt="" loading="lazy" />` : ""}
+          <figure class="quote-content"><span class="quote-mark" aria-hidden="true">“</span><blockquote class="quote-text" ${translatedText ? "data-no-auto-translate" : "data-auto-translate"}>${escapeHtml(getLocalizedRecordField(record, "text"))}</blockquote>${author ? `<figcaption class="quote-author"><cite data-no-auto-translate>${escapeHtml(author)}</cite></figcaption>` : ""}</figure>
+        </article>`;
+      }).join("")
+      : `<p class="quotes-empty">${getDynamicLabel("noQuotes")}</p>`;
+  }
+  renderAdminDirectory(records, adminQuotesList, quoteStorageKey, "quote", renderQuotes);
 };
 
 const setupPeopleListAutoScroll = (lists) => {
@@ -2031,7 +2243,7 @@ const renderEvents = () => {
     adminEventsList.innerHTML = sharedEventsLoadError
       ? `<p class="admin-record-empty form-message-error">${escapeHtml(sharedEventsLoadError.message)}</p>`
       : allEvents.length
-      ? allEvents.map((event) => `<article class="admin-event"><div><strong>${escapeHtml(getLocalizedRecordField(event, "title"))}</strong><span>${escapeHtml([event.date, formatEventTime(event.time)].filter(Boolean).join(" · ") || ({ ru: "Без даты", nl: "Geen datum", en: "No date" }[getCurrentLanguage()]))}</span></div><button type="button" data-delete-event="${escapeHtml(event.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(event, "event")}</article>`).join("")
+      ? allEvents.map((event) => `<article class="admin-event"><div><strong data-auto-translate>${escapeHtml(getLocalizedRecordField(event, "title"))}</strong><span>${escapeHtml([event.date, formatEventTime(event.time)].filter(Boolean).join(" · ") || ({ ru: "Без даты", nl: "Geen datum", en: "No date" }[getCurrentLanguage()]))}</span></div><button type="button" data-delete-event="${escapeHtml(event.id)}">${getDynamicLabel("remove")}</button>${recordEditorMarkup(event, "event")}</article>`).join("")
       : `<p class="admin-record-empty">${getDynamicLabel("noAdminRecords")}</p>`;
 
     bindRecordEditors(adminEventsList, null, "event", renderEvents);
@@ -2154,6 +2366,41 @@ const bindDirectoryForm = (form, storageKey, messageId, render, type) => {
 
 bindDirectoryForm(homeGroupForm, homeGroupStorageKey, "home-group-form-message", renderHomeGroups, "homeGroup");
 bindDirectoryForm(presbyterForm, presbyterStorageKey, "presbyter-form-message", renderPresbyters, "presbyter");
+
+if (quoteForm) {
+  quoteForm.addEventListener("submit", async (submitEvent) => {
+    submitEvent.preventDefault();
+    const message = document.querySelector("#quote-form-message");
+    const submitButton = quoteForm.querySelector('button[type="submit"]');
+    if (!(message instanceof HTMLElement) || !(submitButton instanceof HTMLButtonElement)) return;
+    message.classList.remove("form-message-error");
+    message.textContent = "";
+    submitButton.disabled = true;
+
+    try {
+      const formData = new FormData(quoteForm);
+      const text = String(formData.get("text") || "").trim();
+      if (!text) throw new Error("Укажите текст цитаты.");
+      const uploadedImage = await prepareUploadedImage(formData.get("image"));
+      const quote = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        text,
+        author: String(formData.get("author") || "").trim(),
+        translations: await createRecordTranslations(formData, ["text", "author"], ["author"]),
+        image: uploadedImage.dataUrl,
+        dimImage: formData.get("dimImage") === "on",
+      };
+      if (await saveAdminRecord(quoteStorageKey, quote, message, getDynamicLabel("quoteAdded"), renderQuotes)) {
+        quoteForm.reset();
+      }
+    } catch (error) {
+      message.classList.add("form-message-error");
+      message.textContent = error instanceof Error ? error.message : getDynamicLabel("createRecordError");
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+}
 
 if (eventForm) {
   eventForm.addEventListener("submit", async (submitEvent) => {
@@ -2295,12 +2542,17 @@ if (importBackupInput) {
         const leaders = normalizeBackupItems(backup.leaders, "лидеров");
         const homeGroups = normalizeDirectoryBackupItems(backup.homeGroups, "домашних групп", homeGroupStorageKey);
         const presbyters = normalizeDirectoryBackupItems(backup.presbyters, "пресвитеров", presbyterStorageKey);
+        const quotes = backup.quotes === undefined ? null : normalizeBackupItems(backup.quotes, "цитат");
+        if (quotes && (new Set(quotes.map((quote) => quote.id)).size !== quotes.length
+          || quotes.some((quote) => !/^[A-Za-z0-9_-]{1,100}$/.test(quote.id) || !quote.text?.trim()))) {
+          throw new Error("Некорректные данные цитат в резервной копии.");
+        }
         const gallery = normalizeGalleryBackupItems(backup.gallery);
         const holidayGallery = backup.holidayGallery === undefined
           ? readGalleryPhotos("holidays")
           : normalizeGalleryBackupItems(backup.holidayGallery);
         const pageVisibility = normalizePageVisibility(backup.pageVisibility || sharedContent.pageVisibility);
-        if (!window.confirm(`Заменить текущие данные на сервере?\n\nСобытия: ${events.length}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФото обычной галереи: ${gallery.length}\nФото галереи праздников: ${holidayGallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
+        if (!window.confirm(`Заменить текущие данные на сервере?\n\nСобытия: ${events.length}\nЦитаты: ${quotes ? quotes.length : `${readRecords(quoteStorageKey).length} (без изменений)`}\nЛидеры: ${leaders.length}\nДомашние группы: ${homeGroups.length}\nПресвитеры: ${presbyters.length}\nФото обычной галереи: ${gallery.length}\nФото галереи праздников: ${holidayGallery.length}\n\nПеред заменой текущая копия будет скачана.`)) return;
         await sharedEventsReady;
         if (sharedEventsLoadError) throw sharedEventsLoadError;
         await sharedGalleryReady;
@@ -2318,6 +2570,14 @@ if (importBackupInput) {
         await replaceSharedRecords(leaderStorageKey, leaders);
         await replaceSharedRecords(homeGroupStorageKey, homeGroups);
         await replaceSharedRecords(presbyterStorageKey, presbyters);
+        if (quotes) {
+          const quotesResult = await requestApi("content.php?collection=quotes", {
+            method: "PUT",
+            body: JSON.stringify({ items: quotes }),
+          });
+          if (!Array.isArray(quotesResult.items)) throw new Error("Сервер вернул некорректный список цитат.");
+          sharedContent.quotes = quotesResult.items;
+        }
         const visibilityResult = await requestApi("content.php?collection=pageVisibility", {
           method: "PUT",
           body: JSON.stringify({ pageVisibility }),
@@ -2325,7 +2585,7 @@ if (importBackupInput) {
         sharedContent.pageVisibility = normalizePageVisibility(visibilityResult.pageVisibility);
         await replaceSharedGalleryPhotos(gallery);
         if (backup.holidayGallery !== undefined) await replaceSharedGalleryPhotos(holidayGallery, "holidays");
-        for (const storageKey of contentCollectionByStorageKey.keys()) localStorage.removeItem(storageKey);
+        for (const storageKey of legacyContentStorageKeys) localStorage.removeItem(storageKey);
         localStorage.removeItem(galleryStorageKey);
         sharedEventsReady = loadSharedEvents();
         sharedContentReady = loadSharedContent()
@@ -2334,12 +2594,14 @@ if (importBackupInput) {
             renderLeaders();
             renderHomeGroups();
             renderPresbyters();
+            renderQuotes();
           })
           .catch((error) => {
             sharedContentLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общее содержимое сайта.");
             renderLeaders();
             renderHomeGroups();
             renderPresbyters();
+            renderQuotes();
             console.error("Не удалось загрузить общее содержимое сайта.", sharedContentLoadError);
           });
         renderGallery();
@@ -2356,19 +2618,22 @@ sharedEventsReady = loadSharedEvents();
 renderLeaders();
 renderHomeGroups();
 renderPresbyters();
-if (leadersPageList || homeGroupsList || homeGroupsPreviewList || presbytersList) {
+renderQuotes();
+if (leadersPageList || homeGroupsList || homeGroupsPreviewList || presbytersList || quotesList) {
   sharedContentReady = loadSharedContent()
     .then(() => {
       sharedContentLoadError = null;
       renderLeaders();
       renderHomeGroups();
       renderPresbyters();
+      renderQuotes();
     })
     .catch((error) => {
       sharedContentLoadError = error instanceof Error ? error : new Error("Не удалось загрузить общее содержимое сайта.");
       renderLeaders();
       renderHomeGroups();
       renderPresbyters();
+      renderQuotes();
       console.error("Не удалось загрузить общее содержимое сайта.", sharedContentLoadError);
     });
 }

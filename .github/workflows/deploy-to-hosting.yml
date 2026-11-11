@@ -26,6 +26,7 @@ jobs:
         run: |
           node --check script.js
           node --check i18n.js
+          node --check analytics.js
           find api -type f -name '*.php' -print0 | xargs -0 -r -n1 php -l
 
       - name: Upload site over explicit FTPS

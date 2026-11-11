@@ -243,6 +243,98 @@
 .backup-import-button input {
   display: none;
 }
+.analytics-card {
+  background: #eaf0f7;
+  display: grid;
+  gap: 20px;
+  padding: 28px 30px;
+}
+.analytics-description {
+  color: #64738a;
+  font-size: 14px;
+  margin: 0;
+  max-width: 760px;
+}
+.analytics-card > .form-message {
+  margin: 0;
+}
+.analytics-summary {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.analytics-metric {
+  background: #fff;
+  border-left: 4px solid #f3c94f;
+  box-shadow: 0 8px 24px rgba(20, 43, 74, .05);
+  min-width: 0;
+  padding: 20px;
+}
+.analytics-metric span {
+  color: #64738a;
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.analytics-metric strong {
+  color: #142b4a;
+  display: block;
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1.15;
+  margin-top: 8px;
+}
+.analytics-page-list {
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(20, 43, 74, .05);
+  padding: 20px 24px;
+}
+.analytics-history {
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(20, 43, 74, .05);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 20px 24px;
+}
+.analytics-history h3 {
+  color: #142b4a;
+  font-size: 16px;
+  grid-column: 1 / -1;
+  margin: 0 0 12px;
+}
+.analytics-page-list h3 {
+  color: #142b4a;
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+.analytics-page-row {
+  align-items: center;
+  border-top: 1px solid #e3e9f0;
+  color: #142b4a;
+  display: flex;
+  font-size: 13px;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+}
+.analytics-page-row strong {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 800px) {
+  .analytics-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .analytics-history {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .analytics-card {
+    padding: 20px 16px;
+  }
+  .analytics-page-list {
+    padding: 16px;
+  }
+}
 .event-form .event-dimming-option,
 .admin-record-editor .event-dimming-option {
   align-items: center;
@@ -488,4 +580,17 @@
   .login-card {
     padding: 28px 20px;
   }
+}
+
+.admin-event .admin-quote-text {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.record-save-message.form-message-error {
+  color: #a33d3d;
 }

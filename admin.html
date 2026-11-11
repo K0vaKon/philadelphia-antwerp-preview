@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="theme.css?v=server-content-v1-20260929" />
-    <link rel="stylesheet" href="admin.css?v=holiday-gallery-title-style-v1-20261004" />
+    <link rel="stylesheet" href="admin.css?v=quotes-v1-20261109" />
     <link rel="stylesheet" href="login.css?v=shared-events-v1-20260929" />
     <link rel="stylesheet" href="i18n.css" />
   </head>
@@ -22,11 +22,13 @@
       <div class="admin-heading"><div><p class="eyebrow">Панель управления</p><h1>Управление<br /><em>сайтом.</em></h1></div><p>Выберите раздел — его форма и список записей будут собраны вместе.</p></div>
       <nav class="admin-tabs" aria-label="Разделы админки" role="tablist" data-admin-tabs>
         <button type="button" role="tab" id="admin-tab-events" aria-controls="admin-panel-events" aria-selected="true" tabindex="0" data-admin-tab="admin-panel-events">События</button>
+        <button type="button" role="tab" id="admin-tab-quotes" aria-controls="admin-panel-quotes" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-quotes">Цитаты</button>
         <button type="button" role="tab" id="admin-tab-groups" aria-controls="admin-panel-groups" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-groups">Домашние группы</button>
         <button type="button" role="tab" id="admin-tab-presbyters" aria-controls="admin-panel-presbyters" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-presbyters">Пресвитеры</button>
         <button type="button" role="tab" id="admin-tab-leaders" aria-controls="admin-panel-leaders" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-leaders">Лидеры служения</button>
         <button type="button" role="tab" id="admin-tab-pages" aria-controls="admin-panel-pages" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-pages">Страницы сайта</button>
         <button type="button" role="tab" id="admin-tab-backup" aria-controls="admin-panel-backup" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-backup">Резервная копия</button>
+        <button type="button" role="tab" id="admin-tab-analytics" aria-controls="admin-panel-analytics" aria-selected="false" tabindex="-1" data-admin-tab="admin-panel-analytics">Посещаемость</button>
       </nav>
       <div class="admin-tab-panel" id="admin-panel-events" role="tabpanel" aria-labelledby="admin-tab-events" data-admin-panel>
       <div class="admin-layout">
@@ -50,6 +52,32 @@
       <aside class="admin-aside"><div class="aside-card"><span class="aside-icon">✦</span><h3>События<br /><em>живут здесь.</em></h3><p>Создавайте встречи, праздники и собрания — посетители сразу увидят их на главной странице.</p><div class="aside-line"></div><span class="aside-label">Быстрый совет</span><strong>Добавьте хорошее фото — оно задаёт настроение событию.</strong></div><div class="aside-card aside-light"><span class="aside-label">Как это работает</span><ol><li>Заполните форму</li><li>Добавьте фотографию</li><li>Нажмите «Опубликовать»</li></ol></div></aside>
       </div>
       <section class="admin-records admin-events"><div class="section-top"><div><p class="eyebrow">Управление</p><h2>Опубликованные<br /><span>события.</span></h2></div><span class="events-count" id="events-count">0 событий</span></div><div class="admin-record-list" id="admin-events-list"></div></section>
+      </div>
+      <div class="admin-tab-panel" id="admin-panel-quotes" role="tabpanel" aria-labelledby="admin-tab-quotes" data-admin-panel hidden>
+      <section class="admin-directory admin-events">
+        <div class="section-top"><div><p class="eyebrow">Вдохновение</p><h2>Цитаты</h2></div></div>
+        <div class="admin-layout">
+          <form class="event-form" id="quote-form">
+            <div class="form-title"><span class="form-number">✦</span><div><h2>Новая цитата</h2><p>Добавьте цитату и, при желании, фотографию.</p></div></div>
+            <label>Текст цитаты<textarea name="text" rows="5" maxlength="3000" required></textarea></label>
+            <label>Автор или источник (необязательно)<input name="author" maxlength="300" /></label>
+            <details class="translation-fields"><summary>Переводы на другие языки</summary><p>Текст цитаты переводится автоматически, если перевод не указан. Автор или источник не переводится автоматически.</p>
+              <div class="translation-language"><strong>Nederlands</strong><label>Текст цитаты<textarea name="translations.nl.text" rows="4" maxlength="3000"></textarea></label><label>Автор или источник (необязательно)<input name="translations.nl.author" maxlength="300" /></label></div>
+              <div class="translation-language"><strong>English</strong><label>Текст цитаты<textarea name="translations.en.text" rows="4" maxlength="3000"></textarea></label><label>Автор или источник (необязательно)<input name="translations.en.author" maxlength="300" /></label></div>
+            </details>
+            <label>Фото цитаты (необязательно)<input name="image" type="file" accept="image/*" /></label>
+            <p class="upload-hint">Поддерживаются JPEG, PNG, WebP и другие форматы изображений. Максимальный размер файла — 15 МБ. Фото оптимизируется перед сохранением.</p>
+            <p class="upload-hint">Фотография кадрируется под формат карточки. Лучше всего подходят горизонтальные фотографии 16:9.</p>
+            <label class="event-dimming-option"><input name="dimImage" type="checkbox" checked /> Затемнять фото под текстом</label>
+            <button class="button button-dark" type="submit">Опубликовать цитату <span>↗</span></button>
+            <p class="form-message" id="quote-form-message" role="status"></p>
+          </form>
+        </div>
+      </section>
+      <section class="admin-records admin-events">
+        <div class="section-top"><div><p class="eyebrow">Управление</p><h2>Опубликованные<br /><span>цитаты.</span></h2></div><span class="events-count" id="quotes-count">0 цитат</span></div>
+        <div class="admin-record-list" id="admin-quotes-list"></div>
+      </section>
       </div>
       <div class="admin-tab-panel" id="admin-panel-groups" role="tabpanel" aria-labelledby="admin-tab-groups" data-admin-panel hidden>
       <section class="admin-directory admin-events">
@@ -144,8 +172,8 @@
               </div>
               <div class="holiday-gallery-title-languages">
                 <label><span class="holiday-gallery-language"><b>RU</b> Русский</span><input data-holiday-gallery-title="ru" maxlength="120" required placeholder="Например, Галерея праздников" /></label>
-                <label><span class="holiday-gallery-language"><b>NL</b> Nederlands</span><input data-holiday-gallery-title="nl" maxlength="120" required placeholder="Bijvoorbeeld, Feestgalerij" /></label>
-                <label><span class="holiday-gallery-language"><b>EN</b> English</span><input data-holiday-gallery-title="en" maxlength="120" required placeholder="For example, Holiday gallery" /></label>
+                <label><span class="holiday-gallery-language"><b>NL</b> Nederlands</span><input data-holiday-gallery-title="nl" maxlength="120" required placeholder="Например, Галерея праздников" /></label>
+                <label><span class="holiday-gallery-language"><b>EN</b> English</span><input data-holiday-gallery-title="en" maxlength="120" required placeholder="Например, Галерея праздников" /></label>
               </div>
             </fieldset>
             <button class="button button-dark" id="save-page-visibility" type="button">Сохранить настройки страниц <span>↗</span></button>
@@ -157,7 +185,7 @@
       <section class="admin-backup admin-events">
         <div class="section-top"><div><p class="eyebrow">Перенос и защита</p><h2>Резервная<br /><span>копия.</span></h2></div></div>
         <div class="backup-card">
-          <p>Резервная копия содержит общие события, служения, домашние группы, пресвитерские семьи и фотографии с сервера. При восстановлении выбранные данные заменяются на сервере.</p>
+          <p>Резервная копия содержит общие события, цитаты, служения, домашние группы, пресвитерские семьи и фотографии с сервера. При восстановлении выбранные данные заменяются на сервере.</p>
           <div class="backup-actions">
             <button class="button button-dark" id="export-backup" type="button">Скачать резервную копию <span>↓</span></button>
             <label class="backup-import-button">Восстановить из файла<input id="import-backup" type="file" accept="application/json,.json" /></label>
@@ -166,6 +194,18 @@
         </div>
       </section>
       </div>
+    <div class="admin-tab-panel" id="admin-panel-analytics" role="tabpanel" aria-labelledby="admin-tab-analytics" data-admin-panel hidden>
+      <section class="admin-analytics admin-events">
+        <div class="section-top"><div><p class="eyebrow">Статистика</p><h2>Посещаемость<br /><span>сайта.</span></h2></div></div>
+        <div class="analytics-card">
+          <p class="analytics-description">Просмотры публичных страниц за сегодня, 7 и 30 дней. Повторные загрузки считаются отдельно, поэтому это не число уникальных посетителей. Данные хранятся на сервере в агрегированном виде; IP-адреса и личные данные не собираются.</p>
+          <p class="form-message" id="site-analytics-message" role="status">Загрузка статистики…</p>
+          <div class="analytics-summary" id="site-analytics-summary" aria-live="polite"></div>
+          <div class="analytics-history" id="site-analytics-history"></div>
+          <div class="analytics-page-list" id="site-analytics-pages"></div>
+        </div>
+      </section>
+    </div>
     </main>
     <main class="login-main" id="login-screen">
       <section class="login-card">
@@ -194,7 +234,7 @@
         </form>
       </section>
     </main>
-    <script src="script.js?v=holiday-galleries-bulk-v1"></script>
-    <script src="i18n.js?v=server-content-v1-20260929"></script>
+    <script src="script.js?v=quotes-v1-20261109"></script>
+    <script src="i18n.js?v=quotes-v1-20261109"></script>
   </body>
 </html>
